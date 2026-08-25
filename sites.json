@@ -1,0 +1,52 @@
+{
+    "description": "Конфигурация сайтов для самообучения",
+    "sources": [
+        {
+            "url": "https://docs.python.org/3/tutorial/",
+            "topic_seed": "python",
+            "priority": 1
+        },
+        {
+            "url": "https://go.dev/learn/",
+            "topic_seed": "go",
+            "priority": 1
+        },
+        {
+            "url": "https://doc.rust-lang.org/book/",
+            "topic_seed": "rust",
+            "priority": 1
+        },
+        {
+            "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide",
+            "topic_seed": "javascript",
+            "priority": 2
+        },
+        {
+            "url": "https://learn.microsoft.com/en-us/dotnet/csharp/",
+            "topic_seed": "csharp",
+            "priority": 2
+        },
+        {
+            "url": "https://docs.oracle.com/en/java/",
+            "topic_seed": "java",
+            "priority": 2
+        },
+        {
+            "url": "https://wiki.haskell.org/Haskell",
+            "topic_seed": "haskell",
+            "priority": 3
+        },
+        {
+            "url": "https://www.lua.org/pil/contents.html",
+            "topic_seed": "lua",
+            "priority": 3
+        }
+    ],
+    "settings": {
+        "max_depth": 3,
+        "max_threads": 5,
+        "timeout_per_page": 15,
+        "save_interval": 10,
+        "user_agent": "Python-Ai-Agent-Learner/1.0"
+    }
+}
