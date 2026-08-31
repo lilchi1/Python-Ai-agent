@@ -1,0 +1,274 @@
+{
+  "documents": [
+    {
+      "id": "b3a4a30b-dc87-4776-8d1b-6add2a527995",
+      "text": "Task: Factorial of a number\nLanguage: python\nSolution:\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)",
+      "metadata": {}
+    },
+    {
+      "id": "062d74f2-4f7e-4cc0-849a-9ca614c1a0e1",
+      "text": "Task: Check if number is prime\nLanguage: python\ndef is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True",
+      "metadata": {}
+    },
+    {
+      "id": "ef313a4c-dfb1-436d-bd37-a87cf9d68a82",
+      "text": "Task: Sort a list of numbers\nLanguage: python\ndef sort_list(arr):\n    return sorted(arr)",
+      "metadata": {}
+    },
+    {
+      "id": "03908fde-5f5a-4644-83cc-077cde98d0f8",
+      "text": "Task: Find maximum element\nLanguage: python\ndef find_max(arr):\n    if not arr:\n        return None\n    return max(arr)",
+      "metadata": {}
+    },
+    {
+      "id": "993719a7-743f-4cf7-a0dc-29afc37ee794",
+      "text": "Task: Reverse a string\nLanguage: python\ndef reverse_string(s):\n    return s[::-1]",
+      "metadata": {}
+    },
+    {
+      "id": "981bec14-5a99-4117-9ec2-d428fb979033",
+      "text": "Task: Fibonacci number\nLanguage: python\ndef fibonacci(n):\n    if n <= 0: return 0\n    if n == 1: return 1\n    a, b = 0, 1\n    for _ in range(2, n + 1):\n        a, b = b, a + b\n    return b",
+      "metadata": {}
+    },
+    {
+      "id": "3ab31a35-5536-4d7a-8b1b-5f34bd2b4c1e",
+      "text": "Task: Sum of list elements\nLanguage: python\ndef sum_list(arr):\n    return sum(arr)",
+      "metadata": {}
+    },
+    {
+      "id": "545ee307-2992-4dc4-8843-31c48320cc76",
+      "text": "Task: Check palindrome\nLanguage: python\ndef is_palindrome(s):\n    s = s.lower().replace(' ', '')\n    return s == s[::-1]",
+      "metadata": {}
+    },
+    {
+      "id": "30b5c640-2933-4808-96c4-dc743099df95",
+      "text": "Task: Binary search\nLanguage: javascript\nfunction binarySearch(arr, target) {\n    let lo = 0, hi = arr.length - 1;\n    while (lo <= hi) {\n        const mid = (lo + hi) >> 1;\n        if (arr[mid] === target) return mid;\n        else if (arr[mid] < target) lo = mid + 1;\n        else hi = mid - 1;\n    }\n    return -1;\n}",
+      "metadata": {}
+    },
+    {
+      "id": "2d2d8c67-43e5-439f-aaa4-48ab891320e2",
+      "text": "Task: Factorial in C\nLanguage: c\nint factorial(int n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}",
+      "metadata": {}
+    },
+    {
+      "id": "2c6c8de4-e8ca-41c7-b95a-6273f789a40e",
+      "text": "Task: Is prime in Go\nLanguage: go\nfunc isPrime(n int) bool {\n    if n < 2 { return false }\n    for i := 2; i*i <= n; i++ {\n        if n%i == 0 { return false }\n    }\n    return true\n}",
+      "metadata": {}
+    },
+    {
+      "id": "de5a8c20-c09a-4df7-9166-f8dedcb93fe6",
+      "text": "Task: Factorial in Rust\nLanguage: rust\nfn factorial(n: i32) -> i32 {\n    if n <= 1 { 1 } else { n * factorial(n - 1) }\n}",
+      "metadata": {}
+    },
+    {
+      "id": "2c767b8d-361f-4c8e-a4c8-ec89ba09bdf0",
+      "text": "Task: Reverse string in Java\nLanguage: java\npublic static String reverseString(String s) {\n    return new StringBuilder(s).reverse().toString();\n}",
+      "metadata": {}
+    },
+    {
+      "id": "b44bd282-b1d8-465b-a684-3b0f2364deaf",
+      "text": "Task: FizzBuzz\nLanguage: python\ndef fizzbuzz(n):\n    for i in range(1, n + 1):\n        if i % 15 == 0: yield 'FizzBuzz'\n        elif i % 3 == 0: yield 'Fizz'\n        elif i % 5 == 0: yield 'Buzz'\n        else: yield str(i)",
+      "metadata": {}
+    },
+    {
+      "id": "206d7fe0-8168-48eb-a6ee-191b89a7047e",
+      "text": "Task: GCD in Kotlin\nLanguage: kotlin\nfun gcd(a: Int, b: Int): Int {\n    var x = a; var y = b\n    while (y != 0) { val t = x % y; x = y; y = t }\n    return x\n}",
+      "metadata": {}
+    },
+    {
+      "id": "6be0cb45-8e77-4a51-ac70-0ebc7dc754be",
+      "text": "Task: Sum list in Haskell\nLanguage: haskell\nsumList :: [Int] -> Int\nsumList = sum",
+      "metadata": {}
+    },
+    {
+      "id": "e0c34815-f1e4-4163-badb-e11454799fec",
+      "text": "Task: Binary search in C++\nLanguage: c++\nint binarySearch(std::vector<int> arr, int target) {\n    int lo = 0, hi = arr.size() - 1;\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (arr[mid] == target) return mid;\n        else if (arr[mid] < target) lo = mid + 1;\n        else hi = mid - 1;\n    }\n    return -1;\n}",
+      "metadata": {}
+    },
+    {
+      "id": "549a141f-179e-4a20-8fc8-0f9b75ff5683",
+      "text": "Task: Find max in Ruby\nLanguage: ruby\ndef find_max(arr)\n    arr.max\nend",
+      "metadata": {}
+    },
+    {
+      "id": "209fde6b-f5f0-4955-8fb8-ffd5fe91d116",
+      "text": "Task: Fibonacci in Lua\nLanguage: lua\nfunction fibonacci(n)\n    if n <= 0 then return 0 end\n    if n == 1 then return 1 end\n    local a, b = 0, 1\n    for i = 2, n do a, b = b, a + b end\n    return b\nend",
+      "metadata": {}
+    },
+    {
+      "id": "65e5d69d-0d79-4f79-8680-d7d6033dbf3c",
+      "text": "Task: lang\nLanguage: python\nError: SyntaxError: line 19: invalid syntax\nFailed code:\n#!/usr/bin/env python3\n\ndef solution():\n# Задача: lang (Предыдущая ошибка: SyntaxError: line 19: invalid syntax)\n# Язык: Python\n\n# TODO: Реализовать логику функции\n# Подсказки по синтаксису (Python):\n#   - def\n#   - class\n#   - import\n#   - from\n#   - return\n#   - if\n#   - else\n#   - for\n#   - while\n#   - try\n    return 0  // TODO: implement\n",
+      "metadata": {
+        "task": "lang",
+        "language": "python",
+        "success": false,
+        "error": "SyntaxError: line 19: invalid syntax"
+      }
+    },
+    {
+      "id": "35a8f706-1a13-4e8d-9fc1-ba0e6a5dd006",
+      "text": "Task: \\/lfng\nLanguage: rust\nSolution:\nfn solution() -> i32 {\n// Задача: \\/lfng\n// Язык: Rust\n\n// TODO: Implement logic\n// Hints (Rust):\n//   - fn\n//   - let\n//   - mut\n//   - pub\n//   - struct\n//   - enum\n//   - impl\n//   - trait\n//   - use\n//   - mod\n    return 0  // TODO: implement\n}\n",
+      "metadata": {
+        "task": "\\/lfng",
+        "language": "rust",
+        "success": true
+      }
+    },
+    {
+      "id": "7a43dae7-5070-4ef9-aa15-46856f148c15",
+      "text": "Task: создай графический калькулятор с помощью python tkinter\nLanguage: python\nError: SyntaxError: line 19: invalid syntax\nFailed code:\n#!/usr/bin/env python3\n\ndef graph():\n# Задача: создай графический калькулятор с помощью python tkinter (Предыдущая ошибка: SyntaxError: line 19: invalid syntax)\n# Язык: Python\n\n# TODO: Реализовать логику функции\n# Подсказки по синтаксису (Python):\n#   - def\n#   - class\n#   - import\n#   - from\n#   - return\n#   - if\n#   - else\n#   - for\n#   - while\n#   - try\n    return 0  // TODO: implement\n",
+      "metadata": {
+        "task": "создай графический калькулятор с помощью python tkinter",
+        "language": "python",
+        "success": false,
+        "error": "SyntaxError: line 19: invalid syntax"
+      }
+    },
+    {
+      "id": "8d3475a3-00bd-46a5-ab4c-4d45ea49de77",
+      "text": "Task: create calculator python tkinter\nLanguage: python\nError: SyntaxError: line 19: invalid syntax\nFailed code:\n#!/usr/bin/env python3\n\ndef solution():\n# Задача: create calculator python tkinter (Предыдущая ошибка: SyntaxError: line 19: invalid syntax)\n# Язык: Python\n\n# TODO: Реализовать логику функции\n# Подсказки по синтаксису (Python):\n#   - def\n#   - class\n#   - import\n#   - from\n#   - return\n#   - if\n#   - else\n#   - for\n#   - while\n#   - try\n    return 0  // TODO: implement\n",
+      "metadata": {
+        "task": "create calculator python tkinter",
+        "language": "python",
+        "success": false,
+        "error": "SyntaxError: line 19: invalid syntax"
+      }
+    }
+  ],
+  "idf": {
+    "task": 1.0,
+    "def": 1.538996500732687,
+    "number": 2.791759469228055,
+    "language": 1.0,
+    "solution": 2.5686159179138452,
+    "python": 1.613104472886409,
+    "if": 1.4700036292457357,
+    "return": 1.1823215567939547,
+    "factorial": 2.791759469228055,
+    "prime": 3.0794415416798357,
+    "check": 3.0794415416798357,
+    "true": 3.0794415416798357,
+    "is_prime": 3.4849066497880004,
+    "range": 2.791759469228055,
+    "int": 2.2321436812926323,
+    "false": 3.0794415416798357,
+    "sorted": 3.4849066497880004,
+    "sort_list": 3.4849066497880004,
+    "sort": 3.4849066497880004,
+    "numbers": 3.4849066497880004,
+    "arr": 2.2321436812926323,
+    "list": 2.791759469228055,
+    "element": 3.4849066497880004,
+    "find_max": 3.0794415416798357,
+    "maximum": 3.4849066497880004,
+    "max": 3.0794415416798357,
+    "find": 3.0794415416798357,
+    "none": 3.4849066497880004,
+    "reverse_string": 3.4849066497880004,
+    "reverse": 3.0794415416798357,
+    "string": 3.0794415416798357,
+    "fibonacci": 3.0794415416798357,
+    "sum_list": 3.4849066497880004,
+    "elements": 3.4849066497880004,
+    "sum": 3.0794415416798357,
+    "palindrome": 3.4849066497880004,
+    "lower": 3.4849066497880004,
+    "is_palindrome": 3.4849066497880004,
+    "replace": 3.4849066497880004,
+    "binary": 3.0794415416798357,
+    "target": 3.0794415416798357,
+    "hi": 3.0794415416798357,
+    "javascript": 3.4849066497880004,
+    "else": 2.09861228866811,
+    "lo": 3.0794415416798357,
+    "function": 3.0794415416798357,
+    "const": 3.4849066497880004,
+    "length": 3.4849066497880004,
+    "search": 3.0794415416798357,
+    "while": 2.2321436812926323,
+    "mid": 3.0794415416798357,
+    "binarysearch": 3.0794415416798357,
+    "let": 3.0794415416798357,
+    "isprime": 3.4849066497880004,
+    "go": 3.4849066497880004,
+    "bool": 3.4849066497880004,
+    "func": 3.4849066497880004,
+    "i32": 3.0794415416798357,
+    "rust": 3.0794415416798357,
+    "fn": 3.0794415416798357,
+    "tostring": 3.4849066497880004,
+    "new": 3.4849066497880004,
+    "stringbuilder": 3.4849066497880004,
+    "public": 3.4849066497880004,
+    "static": 3.4849066497880004,
+    "java": 3.4849066497880004,
+    "reversestring": 3.4849066497880004,
+    "15": 3.4849066497880004,
+    "fizz": 3.4849066497880004,
+    "fizzbuzz": 3.4849066497880004,
+    "buzz": 3.4849066497880004,
+    "str": 3.4849066497880004,
+    "yield": 3.4849066497880004,
+    "elif": 3.4849066497880004,
+    "val": 3.4849066497880004,
+    "fun": 3.4849066497880004,
+    "var": 3.4849066497880004,
+    "gcd": 3.4849066497880004,
+    "kotlin": 3.4849066497880004,
+    "sumlist": 3.4849066497880004,
+    "haskell": 3.4849066497880004,
+    "vector": 3.4849066497880004,
+    "std": 3.4849066497880004,
+    "size": 3.4849066497880004,
+    "end": 3.0794415416798357,
+    "ruby": 3.4849066497880004,
+    "local": 3.4849066497880004,
+    "lua": 3.4849066497880004,
+    "invalid": 2.791759469228055,
+    "env": 2.791759469228055,
+    "python3": 2.791759469228055,
+    "синтаксису": 2.791759469228055,
+    "логику": 2.791759469228055,
+    "usr": 2.791759469228055,
+    "язык": 2.5686159179138452,
+    "задача": 2.5686159179138452,
+    "class": 2.791759469228055,
+    "bin": 2.791759469228055,
+    "функции": 2.791759469228055,
+    "предыдущая": 2.791759469228055,
+    "lang": 3.4849066497880004,
+    "todo": 2.5686159179138452,
+    "syntaxerror": 2.791759469228055,
+    "подсказки": 2.791759469228055,
+    "try": 2.791759469228055,
+    "failed": 2.791759469228055,
+    "line": 2.791759469228055,
+    "code": 2.791759469228055,
+    "import": 2.791759469228055,
+    "implement": 2.5686159179138452,
+    "syntax": 2.791759469228055,
+    "error": 2.791759469228055,
+    "ошибка": 2.791759469228055,
+    "реализовать": 2.791759469228055,
+    "19": 2.791759469228055,
+    "trait": 3.4849066497880004,
+    "use": 3.4849066497880004,
+    "lfng": 3.4849066497880004,
+    "struct": 3.4849066497880004,
+    "hints": 3.4849066497880004,
+    "impl": 3.4849066497880004,
+    "enum": 3.4849066497880004,
+    "logic": 3.4849066497880004,
+    "mod": 3.4849066497880004,
+    "pub": 3.4849066497880004,
+    "mut": 3.4849066497880004,
+    "graph": 3.4849066497880004,
+    "помощью": 3.4849066497880004,
+    "tkinter": 3.0794415416798357,
+    "калькулятор": 3.4849066497880004,
+    "графический": 3.4849066497880004,
+    "создай": 3.4849066497880004,
+    "calculator": 3.4849066497880004,
+    "create": 3.4849066497880004
+  }
+}

@@ -244,6 +244,8 @@ def extract_content(html: str) -> str:
 def extract_code_blocks(html: str) -> list[str]:
     """Извлекает блоки кода из HTML."""
     blocks = []
+    print("working")
+
     # <code> и <pre> теги
     for match in re.finditer(r"<(?:code|pre)[^>]*>(.*?)</(?:code|pre)>", html, re.DOTALL | re.IGNORECASE):
         code = re.sub(r"<[^>]+>", "", match.group(1)).strip()
@@ -521,7 +523,7 @@ class SelfEducator:
 
         try:
             # Запускаем ThreadPoolExecutor для параллельной загрузки
-            with ThreadPoolExecutor(max_workers=self.max_threads) as pool:
+            with ThreadPoolExecutor(max_workers=self.max_threads-2) as pool:
                 futures = []
                 for src in sources:
                     if self._should_stop():

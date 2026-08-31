@@ -1,0 +1,116 @@
+[
+  {
+    "task": "lang",
+    "result": {
+      "success": false,
+      "code": "#!/usr/bin/env python3\n\ndef solution():\n# Задача: lang (Предыдущая ошибка: SyntaxError: line 19: invalid syntax)\n# Язык: Python\n\n# TODO: Реализовать логику функции\n# Подсказки по синтаксису (Python):\n#   - def\n#   - class\n#   - import\n#   - from\n#   - return\n#   - if\n#   - else\n#   - for\n#   - while\n#   - try\n    return 0  // TODO: implement\n",
+      "language": "python",
+      "language_info": {
+        "name": "Python",
+        "ext": ".py"
+      },
+      "attempts": 3,
+      "feedback": "SyntaxError: line 19: invalid syntax",
+      "history": [
+        {
+          "code": "#!/usr/bin/env python3\n\ndef solution():\n# Задача: lang\n# Язык: Python\n\n# TODO: Реализовать логику функции\n# Подсказки по синтаксису (Python):\n#   - def\n#   - class\n#   - import\n#   - from\n#   - return\n#   - if\n#   - else\n#   - for\n#   - while\n#   - try\n    return 0  // TODO: implement\n",
+          "feedback": "SyntaxError: line 19: invalid syntax",
+          "success": false
+        },
+        {
+          "code": "#!/usr/bin/env python3\n\ndef solution():\n# Задача: lang (Предыдущая ошибка: SyntaxError: line 19: invalid syntax)\n# Язык: Python\n\n# TODO: Реализовать логику функции\n# Подсказки по синтаксису (Python):\n#   - def\n#   - class\n#   - import\n#   - from\n#   - return\n#   - if\n#   - else\n#   - for\n#   - while\n#   - try\n    return 0  // TODO: implement\n",
+          "feedback": "SyntaxError: line 19: invalid syntax",
+          "success": false
+        },
+        {
+          "code": "#!/usr/bin/env python3\n\ndef solution():\n# Задача: lang (Предыдущая ошибка: SyntaxError: line 19: invalid syntax)\n# Язык: Python\n\n# TODO: Реализовать логику функции\n# Подсказки по синтаксису (Python):\n#   - def\n#   - class\n#   - import\n#   - from\n#   - return\n#   - if\n#   - else\n#   - for\n#   - while\n#   - try\n    return 0  // TODO: implement\n",
+          "feedback": "SyntaxError: line 19: invalid syntax",
+          "success": false
+        }
+      ]
+    }
+  },
+  {
+    "task": "\\/lfng",
+    "result": {
+      "success": true,
+      "code": "fn solution() -> i32 {\n// Задача: \\/lfng\n// Язык: Rust\n\n// TODO: Implement logic\n// Hints (Rust):\n//   - fn\n//   - let\n//   - mut\n//   - pub\n//   - struct\n//   - enum\n//   - impl\n//   - trait\n//   - use\n//   - mod\n    return 0  // TODO: implement\n}\n",
+      "language": "rust",
+      "language_info": {
+        "name": "Rust",
+        "ext": ".rs"
+      },
+      "attempts": 1,
+      "feedback": "Code passed all checks",
+      "history": [
+        {
+          "code": "fn solution() -> i32 {\n// Задача: \\/lfng\n// Язык: Rust\n\n// TODO: Implement logic\n// Hints (Rust):\n//   - fn\n//   - let\n//   - mut\n//   - pub\n//   - struct\n//   - enum\n//   - impl\n//   - trait\n//   - use\n//   - mod\n    return 0  // TODO: implement\n}\n",
+          "feedback": "Code passed all checks",
+          "success": true
+        }
+      ]
+    }
+  },
+  {
+    "task": "создай графический калькулятор с помощью python tkinter",
+    "result": {
+      "success": false,
+      "code": "#!/usr/bin/env python3\n\ndef graph():\n# Задача: создай графический калькулятор с помощью python tkinter (Предыдущая ошибка: SyntaxError: line 19: invalid syntax)\n# Язык: Python\n\n# TODO: Реализовать логику функции\n# Подсказки по синтаксису (Python):\n#   - def\n#   - class\n#   - import\n#   - from\n#   - return\n#   - if\n#   - else\n#   - for\n#   - while\n#   - try\n    return 0  // TODO: implement\n",
+      "language": "python",
+      "language_info": {
+        "name": "Python",
+        "ext": ".py"
+      },
+      "attempts": 3,
+      "feedback": "SyntaxError: line 19: invalid syntax",
+      "history": [
+        {
+          "code": "#!/usr/bin/env python3\n\ndef graph():\n# Задача: создай графический калькулятор с помощью python tkinter\n# Язык: Python\n\n# TODO: Реализовать логику функции\n# Подсказки по синтаксису (Python):\n#   - def\n#   - class\n#   - import\n#   - from\n#   - return\n#   - if\n#   - else\n#   - for\n#   - while\n#   - try\n    return 0  // TODO: implement\n",
+          "feedback": "SyntaxError: line 19: invalid syntax",
+          "success": false
+        },
+        {
+          "code": "#!/usr/bin/env python3\n\ndef graph():\n# Задача: создай графический калькулятор с помощью python tkinter (Предыдущая ошибка: SyntaxError: line 19: invalid syntax)\n# Язык: Python\n\n# TODO: Реализовать логику функции\n# Подсказки по синтаксису (Python):\n#   - def\n#   - class\n#   - import\n#   - from\n#   - return\n#   - if\n#   - else\n#   - for\n#   - while\n#   - try\n    return 0  // TODO: implement\n",
+          "feedback": "SyntaxError: line 19: invalid syntax",
+          "success": false
+        },
+        {
+          "code": "#!/usr/bin/env python3\n\ndef graph():\n# Задача: создай графический калькулятор с помощью python tkinter (Предыдущая ошибка: SyntaxError: line 19: invalid syntax)\n# Язык: Python\n\n# TODO: Реализовать логику функции\n# Подсказки по синтаксису (Python):\n#   - def\n#   - class\n#   - import\n#   - from\n#   - return\n#   - if\n#   - else\n#   - for\n#   - while\n#   - try\n    return 0  // TODO: implement\n",
+          "feedback": "SyntaxError: line 19: invalid syntax",
+          "success": false
+        }
+      ]
+    }
+  },
+  {
+    "task": "create calculator python tkinter",
+    "result": {
+      "success": false,
+      "code": "#!/usr/bin/env python3\n\ndef solution():\n# Задача: create calculator python tkinter (Предыдущая ошибка: SyntaxError: line 19: invalid syntax)\n# Язык: Python\n\n# TODO: Реализовать логику функции\n# Подсказки по синтаксису (Python):\n#   - def\n#   - class\n#   - import\n#   - from\n#   - return\n#   - if\n#   - else\n#   - for\n#   - while\n#   - try\n    return 0  // TODO: implement\n",
+      "language": "python",
+      "language_info": {
+        "name": "Python",
+        "ext": ".py"
+      },
+      "attempts": 3,
+      "feedback": "SyntaxError: line 19: invalid syntax",
+      "history": [
+        {
+          "code": "#!/usr/bin/env python3\n\ndef solution():\n# Задача: create calculator python tkinter\n# Язык: Python\n\n# TODO: Реализовать логику функции\n# Подсказки по синтаксису (Python):\n#   - def\n#   - class\n#   - import\n#   - from\n#   - return\n#   - if\n#   - else\n#   - for\n#   - while\n#   - try\n    return 0  // TODO: implement\n",
+          "feedback": "SyntaxError: line 19: invalid syntax",
+          "success": false
+        },
+        {
+          "code": "#!/usr/bin/env python3\n\ndef solution():\n# Задача: create calculator python tkinter (Предыдущая ошибка: SyntaxError: line 19: invalid syntax)\n# Язык: Python\n\n# TODO: Реализовать логику функции\n# Подсказки по синтаксису (Python):\n#   - def\n#   - class\n#   - import\n#   - from\n#   - return\n#   - if\n#   - else\n#   - for\n#   - while\n#   - try\n    return 0  // TODO: implement\n",
+          "feedback": "SyntaxError: line 19: invalid syntax",
+          "success": false
+        },
+        {
+          "code": "#!/usr/bin/env python3\n\ndef solution():\n# Задача: create calculator python tkinter (Предыдущая ошибка: SyntaxError: line 19: invalid syntax)\n# Язык: Python\n\n# TODO: Реализовать логику функции\n# Подсказки по синтаксису (Python):\n#   - def\n#   - class\n#   - import\n#   - from\n#   - return\n#   - if\n#   - else\n#   - for\n#   - while\n#   - try\n    return 0  // TODO: implement\n",
+          "feedback": "SyntaxError: line 19: invalid syntax",
+          "success": false
+        }
+      ]
+    }
+  }
+]
