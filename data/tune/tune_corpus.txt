@@ -1,0 +1,5341 @@
+#!/usr/bin/env python3
+"""
+Саморазвивающийся мультиязычный агент для генерации кода.
+Без внешних зависимостей — только стандартная библиотека Python.
+"""
+import sys
+import os
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from src.memory.vector_store import LocalVectorStore
+from src.agent.coding_agent import CodingAgent
+from src.orchestrator import Orchestrator
+from src.languages.registry import LanguageRegistry
+from src.learner.self_educator import SelfEducator
+
+DIVIDER = "=" * 60
+
+
+def print_banner():
+    print(DIVIDER)
+    print("  SELF-DEV CODE AGENT")
+    print("  Python 3.x | No external dependencies")
+    print(DIVIDER)
+    print("  Commands:")
+    print("    /lang              - list supported languages")
+    print("    /stats             - show statistics")
+    print("    /history           - show recent tasks")
+    print("    /search <q>        - search archive")
+    print("    /init              - seed knowledge base")
+    print("    /learn [depth]     - start self-learning from internet")
+    print("    /learn-stop        - stop learning (saves progress)")
+    print("    /learn-clear       - reset learning progress")
+    print("    /help              - this help")
+    print("    /quit              - exit")
+    print(DIVIDER)
+
+
+def init_knowledge(vector_store: LocalVectorStore):
+    examples = [
+        "Task: Factorial of a number\nLanguage: python\nSolution:\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)",
+        "Task: Check if number is prime\nLanguage: python\ndef is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True",
+        "Task: Sort a list of numbers\nLanguage: python\ndef sort_list(arr):\n    return sorted(arr)",
+        "Task: Find maximum element\nLanguage: python\ndef find_max(arr):\n    if not arr:\n        return None\n    return max(arr)",
+        "Task: Reverse a string\nLanguage: python\ndef reverse_string(s):\n    return s[::-1]",
+        "Task: Fibonacci number\nLanguage: python\ndef fibonacci(n):\n    if n <= 0: return 0\n    if n == 1: return 1\n    a, b = 0, 1\n    for _ in range(2, n + 1):\n        a, b = b, a + b\n    return b",
+        "Task: Sum of list elements\nLanguage: python\ndef sum_list(arr):\n    return sum(arr)",
+        "Task: Check palindrome\nLanguage: python\ndef is_palindrome(s):\n    s = s.lower().replace(' ', '')\n    return s == s[::-1]",
+        "Task: Binary search\nLanguage: javascript\nfunction binarySearch(arr, target) {\n    let lo = 0, hi = arr.length - 1;\n    while (lo <= hi) {\n        const mid = (lo + hi) >> 1;\n        if (arr[mid] === target) return mid;\n        else if (arr[mid] < target) lo = mid + 1;\n        else hi = mid - 1;\n    }\n    return -1;\n}",
+        "Task: Factorial in C\nLanguage: c\nint factorial(int n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}",
+        "Task: Is prime in Go\nLanguage: go\nfunc isPrime(n int) bool {\n    if n < 2 { return false }\n    for i := 2; i*i <= n; i++ {\n        if n%i == 0 { return false }\n    }\n    return true\n}",
+        "Task: Factorial in Rust\nLanguage: rust\nfn factorial(n: i32) -> i32 {\n    if n <= 1 { 1 } else { n * factorial(n - 1) }\n}",
+        "Task: Reverse string in Java\nLanguage: java\npublic static String reverseString(String s) {\n    return new StringBuilder(s).reverse().toString();\n}",
+        "Task: FizzBuzz\nLanguage: python\ndef fizzbuzz(n):\n    for i in range(1, n + 1):\n        if i % 15 == 0: yield 'FizzBuzz'\n        elif i % 3 == 0: yield 'Fizz'\n        elif i % 5 == 0: yield 'Buzz'\n        else: yield str(i)",
+        "Task: GCD in Kotlin\nLanguage: kotlin\nfun gcd(a: Int, b: Int): Int {\n    var x = a; var y = b\n    while (y != 0) { val t = x % y; x = y; y = t }\n    return x\n}",
+        "Task: Sum list in Haskell\nLanguage: haskell\nsumList :: [Int] -> Int\nsumList = sum",
+        "Task: Binary search in C++\nLanguage: c++\nint binarySearch(std::vector<int> arr, int target) {\n    int lo = 0, hi = arr.size() - 1;\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (arr[mid] == target) return mid;\n        else if (arr[mid] < target) lo = mid + 1;\n        else hi = mid - 1;\n    }\n    return -1;\n}",
+        "Task: Find max in Ruby\nLanguage: ruby\ndef find_max(arr)\n    arr.max\nend",
+        "Task: Fibonacci in Lua\nLanguage: lua\nfunction fibonacci(n)\n    if n <= 0 then return 0 end\n    if n == 1 then return 1 end\n    local a, b = 0, 1\n    for i = 2, n do a, b = b, a + b end\n    return b\nend",
+    ]
+    vector_store.add_documents(examples)
+    print(f"  Added {len(examples)} examples to knowledge base")
+
+
+def main():
+    print_banner()
+
+    vector_store = LocalVectorStore()
+    agent = CodingAgent(vector_store, max_attempts=3)
+    orchestrator = Orchestrator(agent)
+
+    print("  Ready. Type a task or /help for commands.\n")
+
+    try:
+        while True:
+            try:
+                raw = input("task> ").strip()
+            except EOFError:
+                break
+
+            if not raw:
+                continue
+
+            if raw.startswith('/'):
+                cmd = raw.lower().split()
+                name = cmd[0]
+
+                if name == '/quit' or name == '/exit' or name == '/q':
+                    print("  Bye!")
+                    break
+
+                elif name == '/help':
+                    print_banner()
+
+                elif name == '/lang':
+                    langs = LanguageRegistry.supported()
+                    print(f"\n  Supported languages ({len(langs)}):")
+                    for l in langs:
+                        info = LanguageRegistry.get(l)
+                        print(f"    {info.name:12s}  {info.ext}")
+
+                elif name == '/stats':
+                    stats = orchestrator.get_stats()
+                    print(f"\n  Tasks: {stats['total_tasks']}  |  Success: {stats['successful']}  |  Rate: {stats['success_rate']*100:.0f}%")
+                    if stats['languages_used']:
+                        print("  Languages used:")
+                        for lang, count in sorted(stats['languages_used'].items(), key=lambda x: -x[1]):
+                            print(f"    {lang}: {count}")
+
+                elif name == '/history':
+                    n = int(cmd[1]) if len(cmd) > 1 else 10
+                    hist = orchestrator.get_history(n)
+                    if not hist:
+                        print("  No history yet.")
+                    else:
+                        for h in hist:
+                            r = h['result']
+                            ok = "OK" if r.get('success') else "FAIL"
+                            lang = r.get('language', '?')
+                            print(f"  [{ok}] ({lang}) {h['task'][:60]}")
+
+                elif name == '/search':
+                    query = " ".join(cmd[1:])
+                    results = orchestrator.search_archive(query)
+                    if not results:
+                        print("  Nothing found.")
+                    else:
+                        for h in results[-5:]:
+                            r = h['result']
+                            print(f"  [{r.get('language','?')}] {h['task'][:60]}")
+
+                elif name == '/init':
+                    init_knowledge(vector_store)
+
+                elif name == '/learn':
+                    depth = int(cmd[1]) if len(cmd) > 1 else None
+                    educator = SelfEducator(vector_store)
+                    educator.start(depth=depth)
+
+                elif name == '/learn-stop':
+                    print("  Остановка не поддерживается из CLI — используйте Ctrl+C во время /learn")
+                    print("  Прогресс автоматически сохраняется при прерывании")
+
+                elif name == '/learn-clear':
+                    educator = SelfEducator(vector_store)
+                    educator.clear_progress()
+
+                else:
+                    print(f"  Unknown command: {name}. Type /help")
+
+            else:
+                result = orchestrator.execute(raw)
+                print()
+                if result['success']:
+                    print(DIVIDER)
+                    print(f"  RESULT ({result['language'].upper()})")
+                    print(DIVIDER)
+                    print(result['code'])
+                    print(DIVIDER)
+                else:
+                    print(f"  FAILED: {result['feedback']}")
+                    if result.get('code'):
+                        print(f"  Code ({result['attempts']} attempts):")
+                        print(result['code'])
+                print()
+
+    except KeyboardInterrupt:
+        print("\n  Bye!")
+
+    stats = orchestrator.get_stats()
+    print(f"\n  Session: {stats['total_tasks']} tasks, {stats['successful']} successful ({stats['success_rate']*100:.0f}%)")
+
+
+if __name__ == "__main__":
+    main()
+
+
+# ---
+
+#!/usr/bin/env python3
+"""
+Обучение и самообучение языковой модели Mini-GPT.
+
+Способы обучения (разные режимы):
+  python train.py --mode corpus    — обучение на корпусе кода
+  python train.py --mode self      — самообучение на собственном коде проекта
+  python train.py --mode knowledge — обучение на извлечённых знаниях (web/хранилище)
+  python train.py --mode feedback  — обучение на успешных решениях агента
+  python train.py --mode all       — все доступные режимы подряд
+  python train.py --mode eval      — оценка перплексии
+
+Параметры:
+  --steps N  — число шагов обучения на режим
+  --seq N    — длина последовательности (итого ~N токенов контекста)
+  --model P  — путь к файлу модели (по умолчанию src/model/model.bin)
+"""
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from src.neural.neural_trainer import NeuralTrainer, DEFAULT_MODEL
+
+
+def main():
+    import argparse
+    ap = argparse.ArgumentParser(description='Обучение Mini-GPT')
+    ap.add_argument('--steps', type=int, default=1500)
+    ap.add_argument('--seq', type=int, default=64)
+    ap.add_argument('--mode', default='all',
+                    choices=['all', 'corpus', 'self', 'knowledge', 'feedback', 'eval'])
+    ap.add_argument('--model', default=None)
+    ap.add_argument('--eval-file', default=None)
+    ap.add_argument('--save', default=None)
+    args = ap.parse_args()
+
+    mp = args.model or DEFAULT_MODEL
+    tr = NeuralTrainer(model_path=mp)
+    if not tr._load_model():
+        print("  [!] Не удалось загрузить библиотеку модели")
+        sys.exit(1)
+    print(f"  Параметры: {tr.nparams()} | Модель: {mp}")
+    print(f"  Шагов/режим: {args.steps} | seq: {args.seq}")
+
+    if args.eval_file:
+        tr.evaluate(args.eval_file, seq_len=args.seq)
+    elif args.mode == 'corpus':
+        tr.learn_corpus(n_steps=args.steps, seq_len=args.seq)
+    elif args.mode == 'self':
+        tr.learn_self(n_steps=args.steps, seq_len=args.seq)
+    elif args.mode == 'knowledge':
+        tr.learn_knowledge(n_steps=args.steps, seq_len=args.seq)
+    elif args.mode == 'feedback':
+        tr.learn_feedback(n_steps=args.steps, seq_len=args.seq)
+    else:
+        tr.learn_corpus(n_steps=args.steps, seq_len=args.seq)
+        tr.learn_self(n_steps=max(500, args.steps // 2), seq_len=args.seq)
+        tr.learn_knowledge(n_steps=max(300, args.steps // 3), seq_len=args.seq)
+
+    tr.save(args.save or mp)
+    tr.close()
+    print("\n  Готово. Модель сохранена:", args.save or mp)
+
+
+if __name__ == "__main__":
+    main()
+
+
+# ---
+
+import ctypes, os, sys, time
+
+os.chdir(os.path.join('src', 'model'))
+lib = ctypes.CDLL('./minigpt_lib.dll')
+lib.host_init.restype = ctypes.c_void_p
+lib.host_init.argtypes = []
+h = lib.host_init()
+lib.host_nparams.argtypes = [ctypes.c_void_p]
+lib.host_nparams.restype = ctypes.c_int
+print('params:', lib.host_nparams(h))
+
+lib.host_train_step.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_int), ctypes.c_int]
+lib.host_train_step.restype = ctypes.c_float
+
+corpus = open(os.path.join('..', '..', 'data', 'training', 'code_corpus.txt'), 'rb').read()
+data = list(corpus)
+arr = (ctypes.c_int * len(data))(*data)
+
+for seq in (48, 64, 96):
+    n = 300
+    t0 = time.time()
+    for i in range(n):
+        off = (i * seq) % (len(data) - seq - 1)
+        ptr = ctypes.cast(ctypes.byref(arr, off * ctypes.sizeof(ctypes.c_int)),
+                          ctypes.POINTER(ctypes.c_int))
+        lib.host_train_step(h, ptr, seq)
+    dt = time.time() - t0
+    print(f'seq={seq}: {n} steps in {dt:.2f}s -> {dt/n*1000:.1f} ms/step')
+
+lib.host_free.argtypes = [ctypes.c_void_p]
+lib.host_free(h)
+
+
+# ---
+
+import ctypes, os, sys, traceback
+
+log_path = os.path.join(os.environ.get('TEMP','.'), 'train_debug2.txt')
+log = open(log_path, 'w', encoding='utf-8')
+
+def p(x):
+    log.write(str(x) + '\n')
+    log.flush()
+
+p('=== start ===')
+try:
+    os.chdir(os.path.join('src', 'model'))
+    p('cwd: ' + os.getcwd())
+    lib = ctypes.CDLL('./minigpt_lib.dll')
+    p('dll loaded')
+    lib.host_init.restype = ctypes.c_void_p
+    lib.host_init.argtypes = []
+    h = lib.host_init()
+    p('host_init ok: ' + str(h))
+    lib.host_train_data.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_int),
+                                    ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
+    data = b'def foo():\n    return 42\n\ndef bar(x):\n    return x*2\n'
+    a = (ctypes.c_int * len(data))(*data)
+    p('train data len ' + str(len(data)))
+    lib.host_train_data(h, a, len(data), 8, 50, 50)
+    p('train done, now generate')
+    lib.host_generate.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_int),
+                                  ctypes.c_int, ctypes.c_int, ctypes.c_float, ctypes.POINTER(ctypes.c_int)]
+    lib.host_generate.restype = ctypes.c_int
+    prompt = (ctypes.c_int * 5)(ord('d'), ord('e'), ord('f'), ord(' '), ord('f'))
+    out = (ctypes.c_int * 100)()
+    n = lib.host_generate(h, prompt, 5, 100, ctypes.c_float(0.8), out)
+    p('gen n=' + str(n))
+    p('gen str: ' + bytes([out[i] & 0xFF for i in range(n)]).decode('utf-8', 'replace'))
+    lib.host_free.argtypes = [ctypes.c_void_p]
+    lib.host_free(h)
+    p('freed, ALL OK')
+except Exception as e:
+    p('EXCEPTION: ' + repr(e))
+    traceback.print_exc(file=log)
+finally:
+    log.close()
+    print('LOG at ' + log_path)
+
+
+# ---
+
+import sys, os, ctypes
+sys.path.insert(0, '.')
+
+from src.model.minigpt_binding import MiniGPT
+
+m = MiniGPT(model_path='src/model/model.bin', quiet=True)
+print('params:', m.nparams())
+
+prompts = ["def factorial(", "def fibonacci(", "class Stack:", "import os\n\ndef main():"]
+for p in prompts:
+    print('=' * 50)
+    print('PROMPT:', repr(p))
+    try:
+        out = m.generate(p, max_tokens=200, temperature=0.7)
+        print('OUTPUT:')
+        print(out)
+    except Exception as e:
+        print('ERR:', e)
+    print()
+m.close()
+print('DONE')
+
+
+# ---
+
+import sys, os
+log = open(os.path.join(os.environ['TEMP'], 'savetest.txt'), 'w', encoding='utf-8')
+def p(x):
+    log.write(str(x) + '\n'); log.flush()
+
+p('start')
+sys.path.insert(0, '.')
+from src.neural.neural_trainer import NeuralTrainer
+p('imported')
+tr = NeuralTrainer(model_path=None)
+p('created')
+ok = tr._load_model()
+p('loaded: ' + str(ok))
+if ok:
+    p('params ' + str(tr.nparams()))
+    tr.save('src/model/_savetest.bin')
+    p('saved')
+tr.close()
+p('done')
+log.close()
+print('FINISHED, log in temp')
+
+
+# ---
+
+"""
+Оркестратор — управляет потоком выполнения и архивом решений.
+"""
+import json
+import os
+from typing import Dict, Any, List, Optional
+
+from src.agent.coding_agent import CodingAgent
+from src.languages.registry import LanguageRegistry
+
+
+class Orchestrator:
+    def __init__(self, agent: CodingAgent):
+        self.agent = agent
+        self.history: List[Dict] = []
+        self.archive_path = os.path.join("data", "knowledge", "archive.json")
+        self._load_archive()
+
+    def _load_archive(self):
+        if os.path.exists(self.archive_path):
+            try:
+                with open(self.archive_path, 'r', encoding='utf-8') as f:
+                    self.history = json.load(f)
+            except Exception:
+                self.history = []
+
+    def _save_archive(self):
+        os.makedirs(os.path.dirname(self.archive_path), exist_ok=True)
+        with open(self.archive_path, 'w', encoding='utf-8') as f:
+            json.dump(self.history, f, ensure_ascii=False, indent=2)
+
+    def execute(self, task: str, language: Optional[str] = None) -> Dict[str, Any]:
+        result = self.agent.solve(task, language)
+        self.history.append({'task': task, 'result': result})
+        self._save_archive()
+        return result
+
+    def get_stats(self) -> Dict[str, Any]:
+        total = len(self.history)
+        successful = sum(1 for h in self.history if h['result'].get('success'))
+        langs_used = {}
+        for h in self.history:
+            lang = h['result'].get('language', 'unknown')
+            langs_used[lang] = langs_used.get(lang, 0) + 1
+        return {
+            'total_tasks': total,
+            'successful': successful,
+            'success_rate': successful / total if total else 0,
+            'languages_used': langs_used,
+        }
+
+    def get_history(self, n: Optional[int] = None) -> List[Dict]:
+        if n:
+            return self.history[-n:]
+        return list(self.history)
+
+    def search_archive(self, query: str, language: Optional[str] = None) -> List[Dict]:
+        results = []
+        query_lower = query.lower()
+        for h in self.history:
+            task = h.get('task', '').lower()
+            lang = h['result'].get('language', '')
+            if query_lower in task:
+                if language is None or lang == language:
+                    results.append(h)
+        return results
+
+
+# ---
+
+"""
+Мультиязычный агент для решения задач программирования.
+Генерирует код на любом языке, проверяет и самообучается.
+"""
+import re
+from typing import Dict, Any, List, Optional
+
+from src.generator.code_generator import CodeGenerator
+from src.evaluator.code_evaluator import CodeEvaluator
+from src.languages.registry import LanguageRegistry, LanguageInfo
+from src.memory.vector_store import LocalVectorStore
+
+
+class CodingAgent:
+    def __init__(
+        self,
+        vector_store: LocalVectorStore,
+        max_attempts: int = 3,
+    ):
+        self.vector_store = vector_store
+        self.generator = CodeGenerator()
+        self.evaluator = CodeEvaluator()
+        self.max_attempts = max_attempts
+
+    def solve(self, task: str, language: Optional[str] = None) -> Dict[str, Any]:
+        lang_name = self._resolve_language(task, language)
+        lang_info = LanguageRegistry.get(lang_name)
+
+        if not lang_info:
+            return {
+                'success': False,
+                'code': f"// Unsupported language: {lang_name}\n// Supported: {', '.join(LanguageRegistry.supported())}",
+                'language': lang_name,
+                'attempts': 0,
+                'feedback': f"Language '{lang_name}' not supported",
+                'history': [],
+            }
+
+        print(f"  [lang] {lang_info.name} ({lang_info.ext})")
+
+        context_docs = self.vector_store.search(f"{task} {lang_name}", n_results=3)
+        context = "\n\n".join(d['text'] for d in context_docs) if context_docs else ""
+
+        attempts = []
+        best_code = ""
+        best_success = False
+        feedback = ""
+
+        for attempt in range(self.max_attempts):
+            plan = self._generate_plan(task, lang_info, context, attempts)
+            code = self._generate_code(task, lang_info, context, plan, attempts)
+            success, feedback = self._evaluate(code, lang_info)
+
+            attempts.append({
+                'code': code,
+                'feedback': feedback,
+                'success': success,
+            })
+
+            if success:
+                best_code = code
+                best_success = True
+                break
+            elif len(code) > len(best_code):
+                best_code = code
+
+        if not best_code and attempts:
+            best_code = attempts[-1].get('code', '')
+
+        self._learn(task, best_code, lang_name, best_success, feedback)
+
+        return {
+            'success': best_success,
+            'code': best_code,
+            'language': lang_name,
+            'language_info': {
+                'name': lang_info.name,
+                'ext': lang_info.ext,
+            },
+            'attempts': len(attempts),
+            'feedback': feedback,
+            'history': attempts,
+        }
+
+    def _resolve_language(self, task: str, explicit: Optional[str]) -> str:
+        if explicit:
+            info = LanguageRegistry.get(explicit)
+            if info:
+                return info.name.lower()
+
+        detected = LanguageRegistry.detect_language(task)
+        if detected:
+            return detected
+
+        task_lower = task.lower()
+        for lang_name in LanguageRegistry.supported():
+            info = LanguageRegistry.get(lang_name)
+            if info:
+                for kw in info.keywords[:5]:
+                    if kw.lower() in task_lower:
+                        return lang_name
+        return 'python'
+
+    def _generate_plan(self, task: str, lang: LanguageInfo,
+                       context: str, prev_attempts: List[Dict]) -> List[str]:
+        steps = []
+        steps.append(f"Определить имя и параметры функции для языка {lang.name}")
+        steps.append("Реализовать основную логику")
+        steps.append("Добавить обработку ошибок")
+        if prev_attempts:
+            last = prev_attempts[-1]
+            if not last.get('success') and last.get('feedback'):
+                steps.append(f"Исправить: {last['feedback'][:80]}")
+        return steps
+
+    def _generate_code(self, task: str, lang: LanguageInfo,
+                       context: str, plan: List[str],
+                       prev_attempts: List[Dict]) -> str:
+        error_hint = ""
+        if prev_attempts and not prev_attempts[-1].get('success'):
+            error_hint = prev_attempts[-1].get('feedback', '')
+
+        enhanced_task = task
+        if error_hint:
+            enhanced_task += f" (Предыдущая ошибка: {error_hint})"
+
+        return self.generator.generate(enhanced_task, lang.name, context)
+
+    def _evaluate(self, code: str, lang: LanguageInfo) -> tuple:
+        if not code or not code.strip():
+            return False, "Generated code is empty"
+
+        result = self.evaluator.evaluate(code, lang.name)
+        if result['success']:
+            return True, "Code passed all checks"
+        else:
+            return False, "; ".join(result['errors'])
+
+    def _learn(self, task: str, code: str, lang: str,
+               success: bool, feedback: str):
+        if not code:
+            return
+
+        if success:
+            entry = f"Task: {task}\nLanguage: {lang}\nSolution:\n{code}"
+            self.vector_store.add_documents(
+                texts=[entry],
+                metadatas=[{'task': task, 'language': lang, 'success': True}],
+            )
+            self.generator.register_solution(task, code, lang)
+        else:
+            entry = f"Task: {task}\nLanguage: {lang}\nError: {feedback}\nFailed code:\n{code}"
+            self.vector_store.add_documents(
+                texts=[entry],
+                metadatas=[{'task': task, 'language': lang, 'success': False, 'error': feedback[:50]}],
+            )
+
+
+# ---
+
+"""
+Мультиязычный оценщик кода.
+Проверяет синтаксис, стиль, безопасность и наличие заглушек.
+"""
+import ast
+import re
+import subprocess
+import tempfile
+import os
+from typing import Optional, Tuple
+
+
+class CodeEvaluator:
+
+    @staticmethod
+    def check_syntax_python(code: str) -> Tuple[bool, Optional[str]]:
+        try:
+            compile(code, '<string>', 'exec')
+            return True, None
+        except SyntaxError as e:
+            return False, f"SyntaxError: line {e.lineno}: {e.msg}"
+
+    @staticmethod
+    def check_syntax_generic(code: str, lang: str) -> Tuple[bool, Optional[str]]:
+        lang_lower = lang.lower()
+
+        if lang_lower == 'python':
+            return CodeEvaluator.check_syntax_python(code)
+
+        if lang_lower in ('javascript', 'typescript'):
+            return CodeEvaluator._check_braces(code, lang)
+
+        if lang_lower in ('c', 'c++', 'java', 'c#', 'go', 'rust', 'kotlin', 'swift', 'php'):
+            return CodeEvaluator._check_braces(code, lang)
+
+        if lang_lower == 'lua':
+            do_count = len(re.findall(r'\bdo\b', code))
+            end_count = len(re.findall(r'\bend\b', code))
+            if do_count > end_count:
+                return False, f"Unmatched 'do': {do_count} do vs {end_count} end"
+            return True, None
+
+        if lang_lower == 'haskell':
+            return True, None
+
+        if lang_lower in ('bash', 'sh'):
+            fi_count = len(re.findall(r'\bfi\b', code))
+            do_count = len(re.findall(r'\bdo\b', code))
+            done_count = len(re.findall(r'\bdone\b', code))
+            if fi_count % 2 != 0:
+                return False, f"Odd number of 'fi' keywords: {fi_count}"
+            if do_count != done_count:
+                return False, f"Mismatched do/done: {do_count} do, {done_count} done"
+            return True, None
+
+        return True, None
+
+    @staticmethod
+    def _check_braces(code: str, lang: str) -> Tuple[bool, Optional[str]]:
+        stack = []
+        in_string = False
+        string_char = None
+        in_line_comment = False
+        in_block_comment = False
+        prev = ''
+
+        for i, ch in enumerate(code):
+            if in_line_comment:
+                if ch == '\n':
+                    in_line_comment = False
+                continue
+            if in_block_comment:
+                if prev == '*' and ch == '/':
+                    in_block_comment = False
+                prev = ch
+                continue
+            if in_string:
+                if ch == string_char and prev != '\\':
+                    in_string = False
+                prev = ch
+                continue
+
+            if ch in ('"', "'") and (i == 0 or code[i-1] != '\\'):
+                in_string = True
+                string_char = ch
+                prev = ch
+                continue
+            if ch == '/' and i + 1 < len(code):
+                if code[i+1] == '/':
+                    in_line_comment = True
+                    prev = ch
+                    continue
+                if code[i+1] == '*':
+                    in_block_comment = True
+                    prev = ch
+                    continue
+            if ch == '#' and lang.lower() in ('python', 'ruby', 'bash', 'php', 'lua'):
+                in_line_comment = True
+                prev = ch
+                continue
+
+            if ch == '{':
+                stack.append('{')
+            elif ch == '}':
+                if not stack:
+                    return False, f"Unmatched '}}' at position {i}"
+                stack.pop()
+            elif ch == '(':
+                stack.append('(')
+            elif ch == ')':
+                if not stack:
+                    return False, f"Unmatched ')' at position {i}"
+                stack.pop()
+            elif ch == '[':
+                stack.append('[')
+            elif ch == ']':
+                if not stack:
+                    return False, f"Unmatched ']' at position {i}"
+                stack.pop()
+            prev = ch
+
+        if stack:
+            return False, f"Unclosed brackets: {len(stack)} unclosed ({stack[-1]})"
+        return True, None
+
+    @staticmethod
+    def check_style(code: str) -> Tuple[bool, Optional[str]]:
+        warnings = []
+        for i, line in enumerate(code.split("\n"), 1):
+            if len(line) > 120:
+                warnings.append(f"Line {i} too long ({len(line)} > 120)")
+        try:
+            tree = ast.parse(code)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Global):
+                    warnings.append(f"Global statement at line {node.lineno}")
+        except SyntaxError:
+            pass
+        return len(warnings) == 0, "\n".join(warnings) if warnings else None
+
+    @staticmethod
+    def check_safety(code: str, lang: str) -> Tuple[bool, Optional[str]]:
+        forbidden = ['os.system', 'subprocess', 'eval(', 'exec(',
+                     '__import__', 'system(', 'popen(', 'shell=True',
+                     'rm -rf', 'rm -r /', 'format(', 'chmod 777']
+        for pattern in forbidden:
+            if pattern in code:
+                return False, f"Potentially unsafe: '{pattern}'"
+        return True, None
+
+    @staticmethod
+    def check_stubs(code: str, lang: str) -> Tuple[bool, Optional[str]]:
+        lang_lower = lang.lower()
+        lines = code.split("\n")
+
+        for i, line in enumerate(lines, 1):
+            stripped = line.strip()
+            if stripped == 'pass':
+                return False, f"Stub 'pass' found at line {i}"
+            if stripped == '...':
+                return False, f"Stub '...' found at line {i}"
+            if stripped.startswith('// TODO') or stripped.startswith('# TODO'):
+                continue
+            if stripped == 'return None' or stripped == 'return null':
+                prev_lines = [lines[j].strip() for j in range(max(0, i-3), i-1)]
+                has_logic = any(l and l != line.strip() and not l.startswith('#') and not l.startswith('//')
+                               for l in prev_lines)
+                if not has_logic:
+                    return False, f"Possibly incomplete at line {i}"
+        return True, None
+
+    @staticmethod
+    def check_structure(code: str, lang: str) -> Tuple[bool, Optional[str]]:
+        lang_lower = lang.lower()
+        if lang_lower == 'python':
+            if 'def ' in code and 'return' not in code and 'print' not in code:
+                return False, "Function defined but no return/print statement"
+        elif lang_lower in ('c', 'c++', 'java', 'c#', 'go', 'rust', 'kotlin', 'swift', 'php'):
+            if ('int main' in code or 'func main' in code or 'fn main' in code) and 'return' not in code:
+                return False, "Main function missing return statement"
+        return True, None
+
+    @classmethod
+    def evaluate(cls, code: str, lang: str = 'python') -> dict:
+        errors = []
+        warnings = []
+
+        is_valid, error = cls.check_syntax_generic(code, lang)
+        if not is_valid:
+            errors.append(error)
+
+        is_clean, warning = cls.check_style(code)
+        if warning:
+            warnings.append(warning)
+
+        is_safe, error = cls.check_safety(code, lang)
+        if not is_safe:
+            errors.append(error)
+
+        is_complete, error = cls.check_stubs(code, lang)
+        if not is_complete:
+            errors.append(error)
+
+        is_structured, error = cls.check_structure(code, lang)
+        if not is_structured:
+            errors.append(error)
+
+        return {
+            'success': len(errors) == 0,
+            'errors': errors,
+            'warnings': warnings,
+        }
+
+
+# ---
+
+"""
+Шаблонный генератор кода — создаёт код на любом языке без внешних LLM.
+Использует паттерны извлечения имён, параметров и типов из текста задачи.
+"""
+import re
+from typing import Dict, List, Optional, Tuple
+
+from src.languages.registry import LanguageInfo, LanguageRegistry
+
+
+# ── Извлечение информации из задачи ──────────────────────────────
+
+CYRILLIC_MAP = {
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'e',
+    'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
+    'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+    'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch',
+    'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
+}
+
+NAME_TRANSLATIONS = {
+    'факториал': 'factorial', 'простое': 'is_prime', 'простых': 'is_prime',
+    'простого': 'is_prime', 'простая': 'is_prime',
+    'сортировки': 'sort_list', 'сортировка': 'sort_list', 'сортировать': 'sort_list',
+    'максимум': 'find_max', 'минимум': 'find_min',
+    'сумм': 'sum_list', 'сумма': 'sum_list', 'суммирование': 'sum_list',
+    'среднее': 'average', 'средний': 'average',
+    'реверс': 'reverse_string', 'обратная': 'reverse_string',
+    'палиндром': 'is_palindrome',
+    'фибоначчи': 'fibonacci',
+    'нод': 'gcd', 'нок': 'lcm',
+    'последовательность': 'sequence',
+    'бинарный': 'binary_search', 'поиск': 'search',
+}
+
+
+def _normalize_name(name: str) -> str:
+    name_lower = name.lower()
+    if name_lower in NAME_TRANSLATIONS:
+        return NAME_TRANSLATIONS[name_lower]
+    result = []
+    for ch in name_lower:
+        mapped = CYRILLIC_MAP.get(ch, ch)
+        if mapped or ch.isalnum() or ch == '_':
+            result.append(mapped if mapped else '_')
+    normalized = ''.join(result).strip('_')
+    if not normalized or not normalized[0].isalpha():
+        normalized = 'func_' + normalized
+    return normalized
+
+
+def _extract_name(task: str) -> Optional[str]:
+    patterns = [
+        r'(?:функци[юяе]|function|func|метод|method)\s+[`"\']?(\w+)[`"\']?',
+        r'(?:написать|создать|реализовать|напиши|создай|реализуй|write|create|implement)\s+'
+        r'(?:функци[юяе]|function|func|класс|class)\s+[`"\']?(\w+)[`"\']?',
+        r'[`"\'](\w+)[`"\']\s*(?:функци|function)',
+        r'(?:def|function|func|fn)\s+(\w+)',
+    ]
+    skip = {
+        'которая', 'который', 'которое', 'которые', 'которых', 'которому',
+        'that', 'the', 'a', 'an', 'i', 'it',
+        'на', 'для', 'из', 'по', 'от', 'с', 'к', 'о', 'у',
+        'proverki', 'proverka', 'proverit', 'proveryaet',
+        'проверки', 'проверка', 'проверить', 'проверяющую',
+        'вычисления', 'вычисление', 'вычислить',
+        'сортировки', 'сортировка', 'сортировать',
+        'поиска', 'поиск', 'найти', 'найти',
+        'reverse', 'reversing', 'reversed',
+        'случайного', 'случайных', 'случайный',
+        'обработки', 'обработка', 'обработать',
+        'генерации', 'генерация', 'генерировать',
+        'конвертации', 'конвертация', 'конвертировать',
+        'подсчета', 'подсчет', 'подсчитать',
+        'суммирования', 'суммирование', 'суммировать',
+        'перевода', 'перевод', 'перевести',
+        'шифрования', 'шифрование', 'шифровать',
+        'парсинга', 'парсинг', 'парсить',
+        'валидации', 'валидация', 'валидировать',
+        'форматирования', 'форматирование', 'форматировать',
+        'оптимизации', 'оптимизация', 'оптимизировать',
+        'проверки', 'проверка', 'проверить', 'проверяющую',
+        'простого', 'простых', 'простая', 'простое',
+        'числа', 'число', 'чисел',
+        'reverse', 'reversing', 'reversed',
+        'случайного', 'случайных', 'случайный',
+    }
+    for p in patterns:
+        m = re.search(p, task, re.IGNORECASE)
+        if m:
+            name = m.group(1)
+            if name.lower() not in skip and len(name) > 1:
+                return _normalize_name(name)
+    return None
+
+
+def _extract_params(task: str) -> List[Tuple[str, str]]:
+    params = []
+    patterns = [
+        r'(?:принима[её]т|takes?|accepts?|аргумент|argument|параметр|parameter)\s+'
+        r'[`"\']?(\w+)[`"\']?\s*(?:\((\w+)\)|—\s*(\w+))?',
+        r'[`"\'](\w+)[`"\']\s*[:\-\u2014]\s*(\w+)',
+        r'(?:список|list|массив|array|множество|set)\s+[`"\']?(\w+)[`"\']?',
+        r'(?:строк[уае]|string)\s+[`"\']?(\w+)[`"\']?',
+        r'(?:числ[оеа]|number|int|integer|float)\s+[`"\']?(\w+)[`"\']?',
+    ]
+    seen = set()
+    skip = {
+        'которая', 'который', 'которое', 'которые', 'которых', 'которому',
+        'that', 'the', 'a', 'an', 'i', 'it',
+        'на', 'для', 'из', 'по', 'от', 'с', 'к', 'о', 'у', 'не', 'и', 'или',
+        'javascript', 'python', 'java', 'typescript', 'golang', 'ruby',
+        'без', 'при', 'над', 'под', 'между', 'через', 'после', 'перед',
+        'функция', 'функцию', 'function', 'класс', 'class', 'метод', 'method',
+    }
+    for p in patterns:
+        for m in re.finditer(p, task, re.IGNORECASE):
+            groups = m.groups()
+            name = groups[0] if groups else None
+            ptype = ''
+            if len(groups) > 1 and groups[1]:
+                ptype = groups[1]
+            elif len(groups) > 2 and groups[2]:
+                ptype = groups[2]
+            if name and name.lower() not in seen and name.lower() not in skip:
+                seen.add(name.lower())
+                params.append((name, ptype or 'any'))
+    return params
+
+
+def _detect_return_type(task: str, lang_name: str) -> str:
+    t = task.lower()
+    bool_kws = ['bool', 'является ли', 'проверяет', 'true/false', 'true or false']
+    int_kws = ['int', 'число', 'количество', 'чисел', 'индекс', 'степень', 'факториал']
+    str_kws = ['string', 'строк', 'текст']
+    list_kws = ['list', 'список', 'массив', 'sorted', 'отсортиров']
+    float_kws = ['float', 'дробн', 'процент']
+    dict_kws = ['dict', 'словарь', 'mapping', 'hash']
+
+    if any(k in t for k in bool_kws):
+        return _type_for('bool', lang_name)
+    if any(k in t for k in int_kws):
+        return _type_for('int', lang_name)
+    if any(k in t for k in float_kws):
+        return _type_for('float', lang_name)
+    if any(k in t for k in str_kws):
+        return _type_for('str', lang_name)
+    if any(k in t for k in list_kws):
+        return _type_for('list', lang_name)
+    if any(k in t for k in dict_kws):
+        return _type_for('dict', lang_name)
+    return _type_for('int', lang_name)
+
+
+def _type_for(base: str, lang_name: str) -> str:
+    types = {
+        'python': {'bool': 'bool', 'int': 'int', 'float': 'float', 'str': 'str',
+                    'list': 'list', 'dict': 'dict'},
+        'javascript': {'bool': 'boolean', 'int': 'number', 'float': 'number',
+                       'str': 'string', 'list': 'Array', 'dict': 'object'},
+        'typescript': {'bool': 'boolean', 'int': 'number', 'float': 'number',
+                       'str': 'string', 'list': 'Array<any>', 'dict': 'Record<string, any>'},
+        'java': {'bool': 'boolean', 'int': 'int', 'float': 'double',
+                 'str': 'String', 'list': 'List<Object>', 'dict': 'Map<String, Object>'},
+        'c': {'bool': 'int', 'int': 'int', 'float': 'double', 'str': 'char*',
+              'list': 'int*', 'dict': 'void*'},
+        'c++': {'bool': 'bool', 'int': 'int', 'float': 'double',
+                'str': 'std::string', 'list': 'std::vector<int>', 'dict': 'std::map<std::string, int>'},
+        'go': {'bool': 'bool', 'int': 'int', 'float': 'float64',
+               'str': 'string', 'list': '[]int', 'dict': 'map[string]int'},
+        'rust': {'bool': 'bool', 'int': 'i32', 'float': 'f64',
+                 'str': 'String', 'list': 'Vec<i32>', 'dict': 'HashMap<String, i32>'},
+        'php': {'bool': 'bool', 'int': 'int', 'float': 'float',
+                'str': 'string', 'list': 'array', 'dict': 'array'},
+        'ruby': {'bool': 'Boolean', 'int': 'Integer', 'float': 'Float',
+                 'str': 'String', 'list': 'Array', 'dict': 'Hash'},
+        'kotlin': {'bool': 'Boolean', 'int': 'Int', 'float': 'Double',
+                   'str': 'String', 'list': 'List<Any>', 'dict': 'Map<String, Any>'},
+        'c#': {'bool': 'bool', 'int': 'int', 'float': 'double',
+               'str': 'string', 'list': 'List<object>', 'dict': 'Dictionary<string, object>'},
+        'swift': {'bool': 'Bool', 'int': 'Int', 'float': 'Double',
+                  'str': 'String', 'list': '[Any]', 'dict': '[String: Any]'},
+        'lua': {'bool': 'boolean', 'int': 'number', 'float': 'number',
+                'str': 'string', 'list': 'table', 'dict': 'table'},
+        'haskell': {'bool': 'Bool', 'int': 'Int', 'float': 'Double',
+                    'str': 'String', 'list': '[Int]', 'dict': 'Map String Int'},
+        'bash': {'bool': '0/1', 'int': '0', 'float': '0.0',
+                 'str': '""', 'list': '()', 'dict': '()'},
+    }
+    lang_types = types.get(lang_name.lower(), types.get('python', {}))
+    return lang_types.get(base, 'any')
+
+
+# ── Генерация кода ────────────────────────────────────────────────
+
+class CodeGenerator:
+    def __init__(self):
+        self.known_solutions: Dict[str, str] = {}
+
+    def register_solution(self, task_keywords: str, code: str, lang: str):
+        key = f"{lang}:{task_keywords.lower()}"
+        self.known_solutions[key] = code
+
+    def generate(self, task: str, language: str, context: str = "") -> str:
+        lang_info = LanguageRegistry.get(language)
+        if not lang_info:
+            return f"// Язык '{language}' не поддерживается.\n// Поддерживаемые: {', '.join(LanguageRegistry.supported())}"
+
+        name = _extract_name(task) or self._guess_name(task)
+        params = _extract_params(task)
+        if not params:
+            params = self._infer_params(task)
+        ret_type = _detect_return_type(task, lang_info.name.lower())
+        body = self._generate_body(task, lang_info, name, params, ret_type)
+
+        param_str = self._format_params(params, lang_info)
+        template = lang_info.templates.get('function', '')
+        if not template:
+            template = '{body}\n'
+
+        try:
+            code = template.format(
+                name=name,
+                params=param_str,
+                return_type=ret_type,
+                body=body,
+                type_sig=f"{ret_type}",
+            )
+        except KeyError:
+            code = f"{name}({param_str}) {{\n{body}\n}}\n"
+
+        boilerplate = lang_info.boilerplate or ""
+        code = boilerplate + code
+
+        if boilerplate and lang_info.name.lower() in ('java', 'c#', 'kotlin'):
+            code = code.rstrip('\n') + '\n}\n'
+
+        if context:
+            context_code = self._extract_code_from_context(context, lang_info)
+            if context_code:
+                comment = lang_info.comment
+                code = f"{comment} Based on similar solution:\n{comment} ---\n{context_code}{comment} ---\n\n{code}"
+
+        return code.rstrip('\n') + '\n'
+
+    def _guess_name(self, task: str) -> str:
+        t = task.lower()
+        name_patterns = [
+            (r'факториал', 'factorial'), (r'прост', 'is_prime'),
+            (r'сортир', 'sort_list'), (r'максимум', 'find_max'),
+            (r'минимум', 'find_min'), (r'сумм', 'sum_list'),
+            (r'средн', 'average'), (r'реверс', 'reverse_string'),
+            (r'палиндром', 'is_palindrome'), (r'фибоначчи', 'fibonacci'),
+            (r'гуль', 'gcd'), (r'нод', 'gcd'), (r'нок', 'lcm'),
+            (r'последовательность', 'sequence'), (r'числ', 'number'),
+            (r'строк', 'string'), (r'массив', 'array'),
+            (r'список', 'list'), (r'словарь', 'dictionary'),
+            (r'граф', 'graph'), (r'дерев', 'tree'),
+            (r'стек', 'stack'), (r'очередь', 'queue'),
+            (r'поиск', 'search'), (r'bst', 'binary_search'),
+            (r'бинарн', 'binary_search'), (r'линейн', 'linear_search'),
+            (r'FizzBuzz', 'fizz_buzz'), (r'fizzbuzz', 'fizz_buzz'),
+            (r'клас', 'MyClass'), (r'class', 'MyClass'),
+        ]
+        for pattern, name in name_patterns:
+            if re.search(pattern, t):
+                return name
+        return 'solution'
+
+    def _infer_params(self, task: str) -> List[Tuple[str, str]]:
+        t = task.lower()
+        if any(k in t for k in ['факториал', 'factorial']):
+            return [('n', 'int')]
+        if any(k in t for k in ['прост', 'prime']):
+            return [('n', 'int')]
+        if any(k in t for k in ['сортир', 'sort']):
+            return [('arr', 'list')]
+        if any(k in t for k in ['максимум', 'max', 'минимум', 'min']):
+            return [('arr', 'list')]
+        if any(k in t for k in ['сумм', 'sum']):
+            return [('arr', 'list')]
+        if any(k in t for k in ['средн', 'average', 'mean']):
+            return [('arr', 'list')]
+        if any(k in t for k in ['реверс', 'reverse']):
+            return [('s', 'str')]
+        if any(k in t for k in ['палиндром', 'palindrome']):
+            return [('s', 'str')]
+        if any(k in t for k in ['фибоначчи', 'fibonacci']):
+            return [('n', 'int')]
+        if any(k in t for k in ['гуль', 'gcd', 'нод']):
+            return [('a', 'int'), ('b', 'int')]
+        if any(k in t for k in ['нок', 'lcm']):
+            return [('a', 'int'), ('b', 'int')]
+        if any(k in t for k in ['buzz', 'fizz']):
+            return [('n', 'int')]
+        if any(k in t for k in ['бинарн', 'binary_search']):
+            return [('arr', 'list'), ('target', 'int')]
+        return []
+
+    def _generate_body(self, task: str, lang: LanguageInfo, name: str,
+                       params: List[Tuple[str, str]], ret_type: str) -> str:
+        t = task.lower()
+        lang_name = lang.name.lower()
+
+        if any(k in t for k in ['факториал', 'factorial']):
+            return self._factorial(lang_name, name)
+        if any(k in t for k in ['прост', 'prime']):
+            return self._is_prime(lang_name, name)
+        if any(k in t for k in ['сортир', 'sort']):
+            return self._sort_list(lang_name, name)
+        if any(k in t for k in ['максимум', 'max']):
+            return self._find_max(lang_name, name)
+        if any(k in t for k in ['минимум', 'min']):
+            return self._find_min(lang_name, name)
+        if any(k in t for k in ['сумм', 'sum']):
+            return self._sum_list(lang_name, name)
+        if any(k in t for k in ['средн', 'average', 'mean']):
+            return self._average(lang_name, name)
+        if any(k in t for k in ['реверс', 'reverse']):
+            return self._reverse(lang_name, name)
+        if any(k in t for k in ['палиндром', 'palindrome']):
+            return self._palindrome(lang_name, name)
+        if any(k in t for k in ['фибоначчи', 'fibonacci']):
+            return self._fibonacci(lang_name, name)
+        if any(k in t for k in ['гуль', 'gcd', 'нод']):
+            return self._gcd(lang_name, name)
+        if any(k in t for k in ['нок', 'lcm']):
+            return self._lcm(lang_name, name)
+        if any(k in t for k in ['buzz', 'fizz']):
+            return self._fizzbuzz(lang_name, name)
+        if any(k in t for k in ['бинарн', 'binary_search']):
+            return self._binary_search(lang_name, name)
+        return self._generic_task(task, lang_name, name, params, ret_type)
+
+    # ── Task-specific generators ──────────────────────────────────
+
+    def _factorial(self, lang: str, name: str) -> str:
+        impls = {
+            'python': f"    if n <= 1:\n        return 1\n    return n * {name}(n - 1)",
+            'javascript': f"    if (n <= 1) return 1;\n    return n * {name}(n - 1);",
+            'typescript': f"    if (n <= 1) return 1;\n    return n * {name}(n - 1);",
+            'java': f"    if (n <= 1) return 1;\n    return n * {name}(n - 1);",
+            'c': f"    if (n <= 1) return 1;\n    return n * {name}(n - 1);",
+            'c++': f"    if (n <= 1) return 1;\n    return n * {name}(n - 1);",
+            'go': f"    if n <= 1 {{ return 1 }}\n    return n * {name}(n - 1)",
+            'rust': f"    if n <= 1 {{ 1 }} else {{ n * {name}(n - 1) }}",
+            'php': f"    if ($n <= 1) return 1;\n    return $n * {name}($n - 1);",
+            'ruby': f"    return 1 if n <= 1\n    n * {name}(n - 1)",
+            'kotlin': f"    return if (n <= 1) 1 else n * {name}(n - 1)",
+            'c#': f"    if (n <= 1) return 1;\n    return n * {name}(n - 1);",
+            'swift': f"    if n <= 1 {{ return 1 }}\n    return n * {name}(n: n - 1)",
+            'lua': f"    if n <= 1 then return 1 end\n    return n * {name}(n - 1)",
+            'haskell': f"{name} n\n    | n <= 1    = 1\n    | otherwise = n * {name} (n - 1)",
+            'bash': f'    if [ "$n" -le 1 ]; then echo 1; return; fi\n    echo $(( n * $({name} $((n - 1))) ))',
+        }
+        return impls.get(lang, impls['python'])
+
+    def _is_prime(self, lang: str, name: str) -> str:
+        impls = {
+            'python': (
+                f"    if n < 2:\n        return False\n"
+                f"    for i in range(2, int(n**0.5) + 1):\n"
+                f"        if n % i == 0:\n            return False\n    return True"
+            ),
+            'javascript': (
+                f"    if (n < 2) return false;\n"
+                f"    for (let i = 2; i <= Math.sqrt(n); i++) {{\n"
+                f"        if (n % i === 0) return false;\n    }}\n    return true;"
+            ),
+            'typescript': (
+                f"    if (n < 2) return false;\n"
+                f"    for (let i = 2; i <= Math.sqrt(n); i++) {{\n"
+                f"        if (n % i === 0) return false;\n    }}\n    return true;"
+            ),
+            'java': (
+                f"    if (n < 2) return false;\n"
+                f"    for (int i = 2; i <= Math.sqrt(n); i++) {{\n"
+                f"        if (n % i == 0) return false;\n    }}\n    return true;"
+            ),
+            'c': (
+                f"    if (n < 2) return 0;\n"
+                f"    for (int i = 2; i * i <= n; i++) {{\n"
+                f"        if (n % i == 0) return 0;\n    }}\n    return 1;"
+            ),
+            'c++': (
+                f"    if (n < 2) return false;\n"
+                f"    for (int i = 2; i * i <= n; i++) {{\n"
+                f"        if (n % i == 0) return false;\n    }}\n    return true;"
+            ),
+            'go': (
+                f"    if n < 2 {{ return false }}\n"
+                f"    for i := 2; i*i <= n; i++ {{\n"
+                f"        if n%i == 0 {{ return false }}\n    }}\n    return true"
+            ),
+            'rust': (
+                f"    if n < 2 {{ return false; }}\n"
+                f"    for i in 2..=((n as f64).sqrt() as i32) {{\n"
+                f"        if n % i == 0 {{ return false; }}\n    }}\n    true"
+            ),
+            'php': (
+                f"    if ($n < 2) return false;\n"
+                f"    for ($i = 2; $i * $i <= $n; $i++) {{\n"
+                f"        if ($n % $i == 0) return false;\n    }}\n    return true;"
+            ),
+            'ruby': (
+                f"    return false if n < 2\n"
+                f"    (2..Math.sqrt(n).to_i).each {{ |i| return false if n % i == 0 }}\n"
+                f"    true"
+            ),
+            'kotlin': (
+                f"    if (n < 2) return false\n"
+                f"    for (i in 2..Math.sqrt(n.toDouble()).toInt()) {{\n"
+                f"        if (n % i == 0) return false\n    }}\n    return true"
+            ),
+            'c#': (
+                f"    if (n < 2) return false;\n"
+                f"    for (int i = 2; i * i <= n; i++) {{\n"
+                f"        if (n % i == 0) return false;\n    }}\n    return true;"
+            ),
+            'swift': (
+                f"    if n < 2 {{ return false }}\n"
+                f"    for i in 2...Int(Double(n).squareRoot()) {{\n"
+                f"        if n % i == 0 {{ return false }}\n    }}\n    return true"
+            ),
+            'lua': (
+                f"    if n < 2 then return false end\n"
+                f"    local i = 2\n"
+                f"    while i * i <= n do\n"
+                f"        if n % i == 0 then return false end\n"
+                f"        i = i + 1\n    end\n    return true"
+            ),
+            'haskell': (
+                f"{name} n\n"
+                f"    | n < 2     = False\n"
+                f"    | otherwise = all (\\i -> n `mod` i /= 0) [2..floor (sqrt (fromIntegral n))]"
+            ),
+            'bash': (
+                '    if [ "$n" -lt 2 ]; then echo "false"; return; fi\n'
+                '    local i=2\n'
+                '    while [ $((i * i)) -le "$n" ]; do\n'
+                '        if [ $((n % i)) -eq 0 ]; then echo "false"; return; fi\n'
+                '        i=$((i + 1))\n    done\n    echo "true"'
+            ),
+        }
+        return impls.get(lang, impls['python'])
+
+    def _sort_list(self, lang: str, name: str) -> str:
+        impls = {
+            'python': f"    return sorted(arr)",
+            'javascript': f"    return [...arr].sort((a, b) => a - b);",
+            'typescript': f"    return [...arr].sort((a, b) => a - b);",
+            'java': f"    List<Integer> sorted = new ArrayList<>(arr);\n    Collections.sort(sorted);\n    return sorted;",
+            'c': f"    // Пузырьковая сортировка\n    for (int i = 0; i < n - 1; i++)\n        for (int j = 0; j < n - i - 1; j++)\n            if (arr[j] > arr[j+1]) {{ int t = arr[j]; arr[j] = arr[j+1]; arr[j+1] = t; }}\n    return arr;",
+            'c++': f"    std::sort(arr.begin(), arr.end());\n    return arr;",
+            'go': f"    sort.Ints(arr)\n    return arr",
+            'rust': f"    arr.sort();\n    arr",
+            'php': f"    sort($arr);\n    return $arr;",
+            'ruby': f"    arr.sort",
+            'kotlin': f"    return arr.sorted()",
+            'c#': f"    arr.Sort();\n    return arr;",
+            'swift': f"    return arr.sorted()",
+            'lua': f"    table.sort(arr)\n    return arr",
+            'haskell': f"{name} = Prelude.sort",
+            'bash': f'    echo "${{arr[@]}}" | tr " " "\\n" | sort -n | tr "\\n" " "',
+        }
+        return impls.get(lang, impls['python'])
+
+    def _find_max(self, lang: str, name: str) -> str:
+        impls = {
+            'python': f"    if not arr:\n        return None\n    return max(arr)",
+            'javascript': f"    if (!arr.length) return undefined;\n    return Math.max(...arr);",
+            'typescript': f"    if (!arr.length) return undefined;\n    return Math.max(...arr);",
+            'java': f"    if (arr.isEmpty()) return null;\n    return Collections.max(arr);",
+            'c': f"    if (n <= 0) return 0;\n    int mx = arr[0];\n    for (int i = 1; i < n; i++)\n        if (arr[i] > mx) mx = arr[i];\n    return mx;",
+            'c++': f"    if (arr.empty()) return 0;\n    return *std::max_element(arr.begin(), arr.end());",
+            'go': f"    if len(arr) == 0 {{ return 0 }}\n    mx := arr[0]\n    for _, v := range arr[1:] {{ if v > mx {{ mx = v }} }}\n    return mx",
+            'rust': f"    arr.iter().cloned().max().unwrap_or(0)",
+            'php': f"    if (empty($arr)) return null;\n    return max($arr);",
+            'ruby': f"    arr.max",
+            'kotlin': f"    return arr.maxOrNull()",
+            'c#': f"    return arr.Max();",
+            'swift': f"    return arr.max()",
+            'lua': f"    local mx = arr[1]\n    for _, v in ipairs(arr) do if v > mx then mx = v end end\n    return mx",
+            'haskell': f"{name} = maximum",
+            'bash': f'    echo "${{arr[@]}}" | tr " " "\\n" | sort -n | tail -1',
+        }
+        return impls.get(lang, impls['python'])
+
+    def _find_min(self, lang: str, name: str) -> str:
+        impls = {
+            'python': f"    if not arr:\n        return None\n    return min(arr)",
+            'javascript': f"    if (!arr.length) return undefined;\n    return Math.min(...arr);",
+            'typescript': f"    if (!arr.length) return undefined;\n    return Math.min(...arr);",
+            'java': f"    if (arr.isEmpty()) return null;\n    return Collections.min(arr);",
+            'c': f"    if (n <= 0) return 0;\n    int mn = arr[0];\n    for (int i = 1; i < n; i++)\n        if (arr[i] < mn) mn = arr[i];\n    return mn;",
+            'c++': f"    if (arr.empty()) return 0;\n    return *std::min_element(arr.begin(), arr.end());",
+            'go': f"    if len(arr) == 0 {{ return 0 }}\n    mn := arr[0]\n    for _, v := range arr[1:] {{ if v < mn {{ mn = v }} }}\n    return mn",
+            'rust': f"    arr.iter().cloned().min().unwrap_or(0)",
+            'php': f"    if (empty($arr)) return null;\n    return min($arr);",
+            'ruby': f"    arr.min",
+            'kotlin': f"    return arr.minOrNull()",
+            'c#': f"    return arr.Min();",
+            'swift': f"    return arr.min()",
+            'lua': f"    local mn = arr[1]\n    for _, v in ipairs(arr) do if v < mn then mn = v end end\n    return mn",
+            'haskell': f"{name} = minimum",
+            'bash': f'    echo "${{arr[@]}}" | tr " " "\\n" | sort -n | head -1',
+        }
+        return impls.get(lang, impls['python'])
+
+    def _sum_list(self, lang: str, name: str) -> str:
+        impls = {
+            'python': f"    return sum(arr)",
+            'javascript': f"    return arr.reduce((a, b) => a + b, 0);",
+            'typescript': f"    return arr.reduce((a, b) => a + b, 0);",
+            'java': f"    return arr.stream().mapToInt(Integer::intValue).sum();",
+            'c': f"    int s = 0;\n    for (int i = 0; i < n; i++) s += arr[i];\n    return s;",
+            'c++': f"    int s = 0;\n    for (auto x : arr) s += x;\n    return s;",
+            'go': f"    s := 0\n    for _, v := range arr {{ s += v }}\n    return s",
+            'rust': f"    arr.iter().sum()",
+            'php': f"    return array_sum($arr);",
+            'ruby': f"    arr.sum",
+            'kotlin': f"    return arr.sum()",
+            'c#': f"    return arr.Sum();",
+            'swift': f"    return arr.reduce(0, +)",
+            'lua': f"    local s = 0\n    for _, v in ipairs(arr) do s = s + v end\n    return s",
+            'haskell': f"{name} = sum",
+            'bash': f'    echo "${{arr[@]}}" | tr " " "\\n" | paste -sd+ | bc',
+        }
+        return impls.get(lang, impls['python'])
+
+    def _average(self, lang: str, name: str) -> str:
+        impls = {
+            'python': f"    return sum(arr) / len(arr) if arr else 0",
+            'javascript': f"    return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;",
+            'typescript': f"    return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;",
+            'java': f"    return arr.stream().mapToDouble(Integer::doubleValue).average().orElse(0.0);",
+            'c': f"    if (n <= 0) return 0.0;\n    double s = 0;\n    for (int i = 0; i < n; i++) s += arr[i];\n    return s / n;",
+            'c++': f"    if (arr.empty()) return 0.0;\n    double s = 0;\n    for (auto x : arr) s += x;\n    return s / arr.size();",
+            'go': f"    if len(arr) == 0 {{ return 0.0 }}\n    s := 0\n    for _, v := range arr {{ s += v }}\n    return float64(s) / float64(len(arr))",
+            'rust': f"    if arr.is_empty() {{ 0.0 }} else {{ arr.iter().sum::<i32>() as f64 / arr.len() as f64 }}",
+            'php': f"    return empty($arr) ? 0.0 : array_sum($arr) / count($arr);",
+            'ruby': f"    arr.empty? ? 0.0 : arr.sum.to_f / arr.size",
+            'kotlin': f"    return if (arr.isEmpty()) 0.0 else arr.average()",
+            'c#': f"    return arr.Any() ? arr.Average() : 0.0;",
+            'swift': f"    return arr.isEmpty ? 0.0 : Double(arr.reduce(0, +)) / Double(arr.count)",
+            'lua': f"    if #arr == 0 then return 0 end\n    local s = 0\n    for _, v in ipairs(arr) do s = s + v end\n    return s / #arr",
+            'haskell': f"{name} xs = if null xs then 0 else fromIntegral (sum xs) / fromIntegral (length xs)",
+            'bash': f'    echo "${{arr[@]}}" | tr " " "\\n" | awk \'{{s+=$1}} END {{print s/NR}}\'',
+        }
+        return impls.get(lang, impls['python'])
+
+    def _reverse(self, lang: str, name: str) -> str:
+        impls = {
+            'python': f"    return s[::-1]",
+            'javascript': f"    return s.split('').reverse().join('');",
+            'typescript': f"    return s.split('').reverse().join('');",
+            'java': f"    return new StringBuilder(s).reverse().toString();",
+            'c': f"    int len = strlen(s);\n    for (int i = 0; i < len / 2; i++) {{ char t = s[i]; s[i] = s[len-1-i]; s[len-1-i] = t; }}\n    return s;",
+            'c++': f"    std::reverse(s.begin(), s.end());\n    return s;",
+            'go': f"    runes := []rune(s)\n    for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {{\n        runes[i], runes[j] = runes[j], runes[i]\n    }}\n    return string(runes)",
+            'rust': f"    s.chars().rev().collect()",
+            'php': f"    return strrev($s);",
+            'ruby': f"    s.reverse",
+            'kotlin': f"    return s.reversed()",
+            'c#': f"    char[] arr = s.ToCharArray();\n    Array.Reverse(arr);\n    return new string(arr);",
+            'swift': f"    return String(s.reversed())",
+            'lua': f"    return string.reverse(s)",
+            'haskell': f"{name} = reverse",
+            'bash': f'    echo -n "$s" | rev',
+        }
+        return impls.get(lang, impls['python'])
+
+    def _palindrome(self, lang: str, name: str) -> str:
+        impls = {
+            'python': f"    s = s.lower().replace(' ', '')\n    return s == s[::-1]",
+            'javascript': f"    const clean = s.toLowerCase().replace(/\\s/g, '');\n    return clean === clean.split('').reverse().join('');",
+            'typescript': f"    const clean = s.toLowerCase().replace(/\\s/g, '');\n    return clean === clean.split('').reverse().join('');",
+            'java': f"    String clean = s.toLowerCase().replaceAll(\\s, \"\");\n    return clean.equals(new StringBuilder(clean).reverse().toString());",
+            'c': f"    int len = strlen(s);\n    for (int i = 0; i < len / 2; i++)\n        if (s[i] != s[len-1-i]) return 0;\n    return 1;",
+            'c++': f"    std::string clean = s;\n    std::transform(clean.begin(), clean.end(), clean.begin(), ::tolower);\n    clean.erase(std::remove(clean.begin(), clean.end(), ' '), clean.end());\n    return clean == std::string(clean.rbegin(), clean.rend());",
+            'go': f"    s = strings.ToLower(s)\n    s = strings.ReplaceAll(s, \" \", \"\")\n    runes := []rune(s)\n    for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {{\n        if runes[i] != runes[j] {{ return false }}\n    }}\n    return true",
+            'rust': f"    let clean: String = s.chars().filter(|c| !c.is_whitespace()).collect();\n    let lower = clean.to_lowercase();\n    lower == lower.chars().rev().collect::<String>()",
+            'php': f"    $clean = strtolower(preg_replace('/\\s/', '', $s));\n    return $clean === strrev($clean);",
+            'ruby': f"    clean = s.downcase.gsub(/\\s/, '')\n    clean == clean.reverse",
+            'kotlin': f"    val clean = s.lowercase().replace(Regex(\"\\\\s\"), \"\")\n    return clean == clean.reversed()",
+            'c#': f"    string clean = s.ToLower().Replace(\" \", \"\");\n    return clean == new string(clean.Reverse().ToArray());",
+            'swift': f"    let clean = s.lowercased().filter {{ !$0.isWhitespace }}\n    return String(clean) == String(clean.reversed())",
+            'lua': f"    local clean = s:lower():gsub('%s', '')\n    local rev = clean:reverse()\n    return clean == rev",
+            'haskell': f"{name} s = let clean = map toLower (filter (/= ' ') s)\n         in clean == reverse clean",
+            'bash': f'    local clean=$(echo -n "$s" | tr "[:upper:]" "[:lower:]" | tr -d " ")\n    echo "$clean" | rev | grep -q "$clean" && echo "true" || echo "false"',
+        }
+        return impls.get(lang, impls['python'])
+
+    def _fibonacci(self, lang: str, name: str) -> str:
+        impls = {
+            'python': f"    if n <= 0:\n        return 0\n    if n == 1:\n        return 1\n    a, b = 0, 1\n    for _ in range(2, n + 1):\n        a, b = b, a + b\n    return b",
+            'javascript': f"    if (n <= 0) return 0;\n    if (n === 1) return 1;\n    let a = 0, b = 1;\n    for (let i = 2; i <= n; i++) {{ [a, b] = [b, a + b]; }}\n    return b;",
+            'typescript': f"    if (n <= 0) return 0;\n    if (n === 1) return 1;\n    let a = 0, b = 1;\n    for (let i = 2; i <= n; i++) {{ [a, b] = [b, a + b]; }}\n    return b;",
+            'java': f"    if (n <= 0) return 0;\n    if (n == 1) return 1;\n    int a = 0, b = 1;\n    for (int i = 2; i <= n; i++) {{ int t = a + b; a = b; b = t; }}\n    return b;",
+            'c': f"    if (n <= 0) return 0;\n    if (n == 1) return 1;\n    int a = 0, b = 1;\n    for (int i = 2; i <= n; i++) {{ int t = a + b; a = b; b = t; }}\n    return b;",
+            'c++': f"    if (n <= 0) return 0;\n    if (n == 1) return 1;\n    int a = 0, b = 1;\n    for (int i = 2; i <= n; i++) {{ int t = a + b; a = b; b = t; }}\n    return b;",
+            'go': f"    if n <= 0 {{ return 0 }}\n    if n == 1 {{ return 1 }}\n    a, b := 0, 1\n    for i := 2; i <= n; i++ {{ a, b = b, a+b }}\n    return b",
+            'rust': f"    if n <= 0 {{ return 0; }}\n    if n == 1 {{ return 1; }}\n    let (mut a, mut b) = (0, 1);\n    for _ in 2..=n {{ let t = a + b; a = b; b = t; }}\n    b",
+            'php': f"    if ($n <= 0) return 0;\n    if ($n == 1) return 1;\n    $a = 0; $b = 1;\n    for ($i = 2; $i <= $n; $i++) {{ $t = $a + $b; $a = $b; $b = $t; }}\n    return $b;",
+            'ruby': f"    return 0 if n <= 0\n    return 1 if n == 1\n    a, b = 0, 1\n    (2..n).each {{ a, b = b, a + b }}\n    b",
+            'kotlin': f"    if (n <= 0) return 0\n    if (n == 1) return 1\n    var a = 0; var b = 1\n    for (i in 2..n) {{ val t = a + b; a = b; b = t }}\n    return b",
+            'c#': f"    if (n <= 0) return 0;\n    if (n == 1) return 1;\n    int a = 0, b = 1;\n    for (int i = 2; i <= n; i++) {{ int t = a + b; a = b; b = t; }}\n    return b;",
+            'swift': f"    if n <= 0 {{ return 0 }}\n    if n == 1 {{ return 1 }}\n    var a = 0, b = 1\n    for _ in 2...n {{ (a, b) = (b, a + b) }}\n    return b",
+            'lua': f"    if n <= 0 then return 0 end\n    if n == 1 then return 1 end\n    local a, b = 0, 1\n    for i = 2, n do a, b = b, a + b end\n    return b",
+            'haskell': f"{name} n\n    | n <= 0    = 0\n    | n == 1    = 1\n    | otherwise = fib (n-1) + fib (n-2)\n  where fib 0 = 0; fib 1 = 1; fib k = fib (k-1) + fib (k-2)",
+            'bash': f'    if [ "$n" -le 0 ]; then echo 0; return; fi\n    if [ "$n" -eq 1 ]; then echo 1; return; fi\n    local a=0 b=1\n    for ((i=2; i<=n; i++)); do local t=$((a+b)); a=$b; b=$t; done\n    echo $b',
+        }
+        return impls.get(lang, impls['python'])
+
+    def _gcd(self, lang: str, name: str) -> str:
+        impls = {
+            'python': f"    while b:\n        a, b = b, a % b\n    return a",
+            'javascript': f"    while (b) {{ [a, b] = [b, a % b]; }}\n    return a;",
+            'typescript': f"    while (b) {{ [a, b] = [b, a % b]; }}\n    return a;",
+            'java': f"    while (b != 0) {{ int t = a % b; a = b; b = t; }}\n    return a;",
+            'c': f"    while (b) {{ int t = a % b; a = b; b = t; }}\n    return a;",
+            'c++': f"    while (b) {{ int t = a % b; a = b; b = t; }}\n    return a;",
+            'go': f"    for b != 0 {{ a, b = b, a%b }}\n    return a",
+            'rust': f"    while b != 0 {{ let t = a % b; a = b; b = t; }}\n    a",
+            'php': f"    while ($b) {{ $t = $a % $b; $a = $b; $b = $t; }}\n    return $a;",
+            'ruby': f"    a, b = b, a % b until b.zero?\n    a",
+            'kotlin': f"    while (b != 0) {{ val t = a % b; a = b; b = t }}\n    return a",
+            'c#': f"    while (b != 0) {{ int t = a % b; a = b; b = t; }}\n    return a;",
+            'swift': f"    while b != 0 {{ (a, b) = (b, a % b) }}\n    return a",
+            'lua': f"    while b ~= 0 do a, b = b, a % b end\n    return a",
+            'haskell': f"{name} a 0 = a\n{name} a b = {name} b (a `mod` b)",
+            'bash': f'    local t\n    while [ "$b" -ne 0 ]; do t=$((a % b)); a=$b; b=$t; done\n    echo $a',
+        }
+        return impls.get(lang, impls['python'])
+
+    def _lcm(self, lang: str, name: str) -> str:
+        gcd_name = 'gcd'
+        impls = {
+            'python': f"    return abs(a * b) // {gcd_name}(a, b) if a and b else 0",
+            'javascript': f"    return a && b ? Math.abs(a * b) / {gcd_name}(a, b) : 0;",
+            'typescript': f"    return a && b ? Math.abs(a * b) / {gcd_name}(a, b) : 0;",
+            'java': f"    return a != 0 && b != 0 ? Math.abs(a / {gcd_name}(a, b) * b) : 0;",
+            'c': f"    return a && b ? a / {gcd_name}(a, b) * b : 0;",
+            'c++': f"    return a && b ? a / {gcd_name}(a, b) * b : 0;",
+            'go': f"    if a == 0 || b == 0 {{ return 0 }}\n    return a / {gcd_name}(a, b) * b",
+            'rust': f"    if a == 0 || b == 0 {{ 0 }} else {{ a / {gcd_name}(a, b) * b }}",
+            'php': f"    return $a && $b ? abs($a / {gcd_name}($a, $b) * $b) : 0;",
+            'ruby': f"    a.abs * b.abs / {gcd_name}(a, b)",
+            'kotlin': f"    return if (a == 0 || b == 0) 0 else Math.abs(a / {gcd_name}(a, b) * b)",
+            'c#': f"    return a != 0 && b != 0 ? Math.Abs(a / {gcd_name}(a, b) * b) : 0;",
+            'swift': f"    return a != 0 && b != 0 ? abs(a / {gcd_name}(a: a, b: b) * b) : 0",
+            'lua': f"    if a == 0 or b == 0 then return 0 end\n    return math.abs(a * b / {gcd_name}(a, b))",
+            'haskell': f"{name} a b = abs (a * b) `div` {gcd_name} a b",
+            'bash': f'    if [ "$a" -eq 0 ] || [ "$b" -eq 0 ]; then echo 0; return; fi\n    local g=$({gcd_name} $a $b)\n    echo $(( a / g * b ))',
+        }
+        return impls.get(lang, impls['python'])
+
+    def _fizzbuzz(self, lang: str, name: str) -> str:
+        impls = {
+            'python': (
+                f"    for i in range(1, n + 1):\n"
+                f"        if i % 15 == 0: yield 'FizzBuzz'\n"
+                f"        elif i % 3 == 0: yield 'Fizz'\n"
+                f"        elif i % 5 == 0: yield 'Buzz'\n"
+                f"        else: yield str(i)"
+            ),
+            'javascript': (
+                f"    const result = [];\n"
+                f"    for (let i = 1; i <= n; i++) {{\n"
+                f"        if (i % 15 === 0) result.push('FizzBuzz');\n"
+                f"        else if (i % 3 === 0) result.push('Fizz');\n"
+                f"        else if (i % 5 === 0) result.push('Buzz');\n"
+                f"        else result.push(String(i));\n    }}\n    return result;"
+            ),
+            'typescript': (
+                f"    const result: string[] = [];\n"
+                f"    for (let i = 1; i <= n; i++) {{\n"
+                f"        if (i % 15 === 0) result.push('FizzBuzz');\n"
+                f"        else if (i % 3 === 0) result.push('Fizz');\n"
+                f"        else if (i % 5 === 0) result.push('Buzz');\n"
+                f"        else result.push(String(i));\n    }}\n    return result;"
+            ),
+            'java': (
+                f"    List<String> result = new ArrayList<>();\n"
+                f"    for (int i = 1; i <= n; i++) {{\n"
+                f"        if (i % 15 == 0) result.add(\"FizzBuzz\");\n"
+                f"        else if (i % 3 == 0) result.add(\"Fizz\");\n"
+                f"        else if (i % 5 == 0) result.add(\"Buzz\");\n"
+                f"        else result.add(String.valueOf(i));\n    }}\n    return result;"
+            ),
+            'c': (
+                f"    for (int i = 1; i <= n; i++) {{\n"
+                f"        if (i % 15 == 0) printf(\"FizzBuzz\\n\");\n"
+                f"        else if (i % 3 == 0) printf(\"Fizz\\n\");\n"
+                f"        else if (i % 5 == 0) printf(\"Buzz\\n\");\n"
+                f"        else printf(\"%d\\n\", i);\n    }}"
+            ),
+            'c++': (
+                f"    for (int i = 1; i <= n; i++) {{\n"
+                f"        if (i % 15 == 0) std::cout << \"FizzBuzz\" << std::endl;\n"
+                f"        else if (i % 3 == 0) std::cout << \"Fizz\" << std::endl;\n"
+                f"        else if (i % 5 == 0) std::cout << \"Buzz\" << std::endl;\n"
+                f"        else std::cout << i << std::endl;\n    }}"
+            ),
+            'go': (
+                f"    for i := 1; i <= n; i++ {{\n"
+                f"        switch {{\n"
+                f"        case i%15 == 0: fmt.Println(\"FizzBuzz\")\n"
+                f"        case i%3 == 0: fmt.Println(\"Fizz\")\n"
+                f"        case i%5 == 0: fmt.Println(\"Buzz\")\n"
+                f"        default: fmt.Println(i)\n    }}}}"
+            ),
+            'rust': (
+                "    for i in 1..=n {\n"
+                "        match i % 15 {\n"
+                "            0 => println!(\"FizzBuzz\"),\n"
+                "            _ => match i % 3 {\n"
+                "                0 => println!(\"Fizz\"),\n"
+                "                _ => match i % 5 {\n"
+                "                    0 => println!(\"Buzz\"),\n"
+                "                    _ => println!(\"{}\", i),\n"
+                "                }\n"
+                "            }\n"
+                "        }\n"
+                "    }"
+            ),
+            'php': (
+                f"    for ($i = 1; $i <= $n; $i++) {{\n"
+                f"        if ($i % 15 == 0) echo \"FizzBuzz\\n\";\n"
+                f"        else if ($i % 3 == 0) echo \"Fizz\\n\";\n"
+                f"        else if ($i % 5 == 0) echo \"Buzz\\n\";\n"
+                f"        else echo $i . \"\\n\";\n    }}"
+            ),
+            'ruby': (
+                f"    (1..n).each do |i|\n"
+                f"        if i % 15 == 0 then puts \"FizzBuzz\"\n"
+                f"        elsif i % 3 == 0 then puts \"Fizz\"\n"
+                f"        elsif i % 5 == 0 then puts \"Buzz\"\n"
+                f"        else puts i\n    end end"
+            ),
+            'kotlin': (
+                f"    for (i in 1..n) {{\n"
+                f"        when {{\n"
+                f"            i % 15 == 0 -> println(\"FizzBuzz\")\n"
+                f"            i % 3 == 0 -> println(\"Fizz\")\n"
+                f"            i % 5 == 0 -> println(\"Buzz\")\n"
+                f"            else -> println(i)\n    }}}}"
+            ),
+            'c#': (
+                f"    for (int i = 1; i <= n; i++) {{\n"
+                f"        if (i % 15 == 0) Console.WriteLine(\"FizzBuzz\");\n"
+                f"        else if (i % 3 == 0) Console.WriteLine(\"Fizz\");\n"
+                f"        else if (i % 5 == 0) Console.WriteLine(\"Buzz\");\n"
+                f"        else Console.WriteLine(i);\n    }}"
+            ),
+            'swift': (
+                "    for i in 1...n {\n"
+                "        switch i % 15 {\n"
+                "        case 0: print(\"FizzBuzz\")\n"
+                "        default:\n"
+                "            switch i % 3 {\n"
+                "            case 0: print(\"Fizz\")\n"
+                "            default:\n"
+                "                switch i % 5 {\n"
+                "                case 0: print(\"Buzz\")\n"
+                "                default: print(i)\n"
+                "    }}}}"
+            ),
+            'lua': (
+                f"    for i = 1, n do\n"
+                f"        if i % 15 == 0 then print(\"FizzBuzz\")\n"
+                f"        elseif i % 3 == 0 then print(\"Fizz\")\n"
+                f"        elseif i % 5 == 0 then print(\"Buzz\")\n"
+                f"        else print(i)\n    end end"
+            ),
+            'haskell': (
+                f"map fizzBuzz [1..n]\n"
+                f"  where fizzBuzz i\n"
+                f"          | i `mod` 15 == 0 = \"FizzBuzz\"\n"
+                f"          | i `mod` 3 == 0  = \"Fizz\"\n"
+                f"          | i `mod` 5 == 0  = \"Buzz\"\n"
+                f"          | otherwise        = show i"
+            ),
+            'bash': (
+                '    for ((i=1; i<=n; i++)); do\n'
+                '        if [ $((i % 15)) -eq 0 ]; then echo "FizzBuzz"\n'
+                '        elif [ $((i % 3)) -eq 0 ]; then echo "Fizz"\n'
+                '        elif [ $((i % 5)) -eq 0 ]; then echo "Buzz"\n'
+                '        else echo $i\n    done'
+            ),
+        }
+        return impls.get(lang, impls['python'])
+
+    def _binary_search(self, lang: str, name: str) -> str:
+        impls = {
+            'python': (
+                f"    lo, hi = 0, len(arr) - 1\n"
+                f"    while lo <= hi:\n"
+                f"        mid = (lo + hi) // 2\n"
+                f"        if arr[mid] == target: return mid\n"
+                f"        elif arr[mid] < target: lo = mid + 1\n"
+                f"        else: hi = mid - 1\n"
+                f"    return -1"
+            ),
+            'javascript': (
+                f"    let lo = 0, hi = arr.length - 1;\n"
+                f"    while (lo <= hi) {{\n"
+                f"        const mid = (lo + hi) >> 1;\n"
+                f"        if (arr[mid] === target) return mid;\n"
+                f"        else if (arr[mid] < target) lo = mid + 1;\n"
+                f"        else hi = mid - 1;\n    }}\n    return -1;"
+            ),
+            'c': (
+                f"    int lo = 0, hi = n - 1;\n"
+                f"    while (lo <= hi) {{\n"
+                f"        int mid = lo + (hi - lo) / 2;\n"
+                f"        if (arr[mid] == target) return mid;\n"
+                f"        else if (arr[mid] < target) lo = mid + 1;\n"
+                f"        else hi = mid - 1;\n    }}\n    return -1;"
+            ),
+            'go': (
+                f"    lo, hi := 0, len(arr)-1\n"
+                f"    for lo <= hi {{\n"
+                f"        mid := lo + (hi-lo)/2\n"
+                f"        if arr[mid] == target {{ return mid }}\n"
+                f"        if arr[mid] < target {{ lo = mid + 1 }} else {{ hi = mid - 1 }}\n"
+                f"    }}\n    return -1"
+            ),
+        }
+        return impls.get(lang, impls.get('python', '    // binary search'))
+
+    def _generic_task(self, task: str, lang: str, name: str,
+                      params: List[Tuple[str, str]], ret_type: str) -> str:
+        lang_info = LanguageRegistry.get(lang)
+        if not lang_info:
+            return f"    // Не удалось сгенерировать код для: {task}"
+
+        comment = lang_info.comment
+        keywords_lower = [k.lower() for k in lang_info.keywords]
+
+        lines = [f"{comment} Задача: {task}", f"{comment} Язык: {lang_info.name}", ""]
+
+        if lang in ('python', 'ruby', 'lua', 'bash', 'haskell'):
+            lines.append(f"{comment} TODO: Реализовать логику функции")
+            lines.append(f"{comment} Подсказки по синтаксису ({lang_info.name}):")
+            for kw in lang_info.keywords[:10]:
+                lines.append(f"{comment}   - {kw}")
+        else:
+            lines.append(f"{comment} TODO: Implement logic")
+            lines.append(f"{comment} Hints ({lang_info.name}):")
+            for kw in lang_info.keywords[:10]:
+                lines.append(f"{comment}   - {kw}")
+
+        if params:
+            lines.append("")
+            lines.append(f"{comment} Parameters:")
+            for pname, ptype in params:
+                lines.append(f"{comment}   - {pname}: {ptype}")
+
+        if 'int' in ret_type.lower() or 'number' in ret_type.lower() or 'i32' in ret_type:
+            lines.append(f"    return 0  // TODO: implement")
+        elif 'bool' in ret_type.lower() or 'boolean' in ret_type.lower():
+            lines.append(f"    return true  // TODO: implement")
+        elif 'string' in ret_type.lower():
+            lines.append(f'    return ""  // TODO: implement')
+        elif 'list' in ret_type.lower() or 'array' in ret_type.lower() or 'vec' in ret_type.lower():
+            lines.append(f"    return []  // TODO: implement")
+        elif 'dict' in ret_type.lower() or 'map' in ret_type.lower() or 'hash' in ret_type.lower():
+            lines.append(f"    return {{}}  // TODO: implement")
+        elif 'void' in ret_type.lower() or lang in ('c', 'bash'):
+            lines.append(f"    // TODO: implement")
+        else:
+            lines.append(f"    return None  // TODO: implement")
+
+        return "\n".join(lines)
+
+    def _format_params(self, params: List[Tuple[str, str]], lang: LanguageInfo) -> str:
+        if not params:
+            return ""
+        lang_name = lang.name.lower()
+        parts = []
+        for pname, ptype in params:
+            if lang_name == 'python':
+                parts.append(pname)
+            elif lang_name == 'go':
+                mapped = _type_for(ptype, lang_name) if ptype != 'any' else 'int'
+                parts.append(f"{pname} {mapped}")
+            elif lang_name == 'rust':
+                mapped = _type_for(ptype, lang_name) if ptype != 'any' else 'i32'
+                parts.append(f"{pname}: {mapped}")
+            elif lang_name in ('c', 'c++', 'java', 'c#', 'kotlin', 'swift'):
+                mapped = _type_for(ptype, lang_name) if ptype != 'any' else 'int'
+                parts.append(f"{mapped} {pname}")
+            elif lang_name in ('javascript', 'typescript'):
+                if ptype != 'any':
+                    mapped = _type_for(ptype, lang_name)
+                    parts.append(f"{pname}: {mapped}" if lang_name == 'typescript' else pname)
+                else:
+                    parts.append(pname)
+            elif lang_name == 'php':
+                parts.append(f"${pname}")
+            elif lang_name == 'ruby':
+                parts.append(pname)
+            elif lang_name == 'lua':
+                parts.append(pname)
+            elif lang_name == 'haskell':
+                mapped = _type_for(ptype, lang_name) if ptype != 'any' else 'Int'
+                parts.append(f"{pname} :: {mapped}")
+            else:
+                parts.append(f"{ptype} {pname}")
+        return ", ".join(parts)
+
+    @staticmethod
+    def _extract_code_from_context(context: str, lang_info) -> str:
+        if not context:
+            return ""
+        lang_lower = lang_info.name.lower()
+        sections = context.split("\n\n")
+        for section in sections:
+            lang_match = re.search(r'Language:\s*(\w+)', section, re.IGNORECASE)
+            if lang_match:
+                ctx_lang = lang_match.group(1).lower()
+                if ctx_lang != lang_lower:
+                    continue
+            sol_match = re.search(r'Solution:\n(.*)', section, re.DOTALL)
+            if sol_match:
+                code = sol_match.group(1).strip()
+                lines = code.split("\n")
+                clean_lines = []
+                for line in lines:
+                    stripped = line.strip()
+                    if stripped.startswith("Task:") or stripped.startswith("Language:"):
+                        continue
+                    clean_lines.append(line)
+                return "\n".join(clean_lines).strip() + "\n"
+        return ""
+
+
+# ---
+
+"""
+Реестр языков программирования — шаблоны, ключевые слова, синтаксис.
+Поддерживает: Python, JavaScript, TypeScript, C, C++, Java, Go, Rust, PHP, Ruby, Swift, Kotlin, C#, Lua, Haskell.
+"""
+from typing import Dict, List, Optional
+
+
+class LanguageInfo:
+    __slots__ = ('name', 'ext', 'comment', 'keywords', 'templates', 'boilerplate')
+
+    def __init__(self, name: str, ext: str, comment: str,
+                 keywords: List[str], templates: Dict[str, str],
+                 boilerplate: str = ""):
+        self.name = name
+        self.ext = ext
+        self.comment = comment
+        self.keywords = keywords
+        self.templates = templates
+        self.boilerplate = boilerplate
+
+
+LANGUAGES: Dict[str, LanguageInfo] = {}
+
+
+def _reg(name: str, ext: str, comment: str, keywords: List[str],
+         templates: Dict[str, str], boilerplate: str = ""):
+    LANGUAGES[name.lower()] = LanguageInfo(name, ext, comment, keywords, templates, boilerplate)
+
+
+# ── Python ───────────────────────────────────────────────────────
+_reg("Python", ".py", "#",
+     ["def", "class", "import", "from", "return", "if", "else", "for", "while",
+      "try", "except", "finally", "with", "as", "lambda", "yield", "raise",
+      "True", "False", "None", "self", "async", "await", "in", "not", "and", "or"],
+     {
+         "function": (
+             "def {name}({params}):\n"
+             "{body}\n"
+         ),
+         "class": (
+             "class {name}:\n"
+             "    def __init__(self{params}):\n"
+             "        {body}\n"
+         ),
+         "main": (
+             "if __name__ == \"__main__\":\n"
+             "    {body}\n"
+         ),
+     },
+     "#!/usr/bin/env python3\n\n"
+),
+
+# ── JavaScript ───────────────────────────────────────────────────
+_reg("JavaScript", ".js", "//",
+     ["function", "const", "let", "var", "return", "if", "else", "for", "while",
+      "class", "extends", "new", "this", "async", "await", "import", "export",
+      "default", "try", "catch", "finally", "throw", "typeof", "instanceof",
+      "switch", "case", "break", "continue", "null", "undefined", "true", "false"],
+     {
+         "function": (
+             "/** TODO: description */\n"
+             "function {name}({params}) {{\n"
+             "{body}\n"
+             "}}\n"
+         ),
+         "class": (
+             "class {name} {{\n"
+             "    constructor({params}) {{\n"
+             "        {body}\n"
+             "    }}\n"
+             "}}\n"
+         ),
+         "main": "{body}\n",
+     },
+     "\"use strict\";\n\n"
+),
+
+# ── TypeScript ───────────────────────────────────────────────────
+_reg("TypeScript", ".ts", "//",
+     ["function", "const", "let", "return", "if", "else", "for", "while",
+      "class", "extends", "new", "this", "async", "await", "import", "export",
+      "interface", "type", "enum", "namespace", "public", "private", "protected",
+      "readonly", "abstract", "implements", "keyof", "unknown", "any", "void",
+      "never", "string", "number", "boolean", "null", "undefined"],
+     {
+         "function": (
+             "/** TODO: description */\n"
+             "function {name}({params}): {return_type} {{\n"
+             "{body}\n"
+             "}}\n"
+         ),
+         "class": (
+             "class {name} {{\n"
+             "    constructor({params}) {{\n"
+             "        {body}\n"
+             "    }}\n"
+             "}}\n"
+         ),
+         "main": "{body}\n",
+     },
+),
+
+# ── C ─────────────────────────────────────────────────────────────
+_reg("C", ".c", "//",
+     ["int", "char", "float", "double", "void", "long", "short", "unsigned",
+      "struct", "enum", "typedef", "sizeof", "return", "if", "else", "for",
+      "while", "do", "switch", "case", "break", "continue", "goto",
+      "const", "static", "extern", "volatile", "register", "NULL", "true", "false"],
+     {
+         "function": (
+             "{return_type} {name}({params}) {{\n"
+             "{body}\n"
+             "}}\n"
+         ),
+         "struct": (
+             "typedef struct {{\n"
+             "    {body}\n"
+             "}} {name};\n"
+         ),
+         "main": (
+             "int main(int argc, char *argv[]) {{\n"
+             "    {body}\n"
+             "    return 0;\n"
+             "}}\n"
+         ),
+     },
+     "#include <stdio.h>\n#include <stdlib.h>\n\n"
+),
+
+# ── C++ ──────────────────────────────────────────────────────────
+_reg("C++", ".cpp", "//",
+     ["int", "char", "float", "double", "void", "long", "auto", "const",
+      "class", "struct", "template", "namespace", "using", "new", "delete",
+      "return", "if", "else", "for", "while", "do", "switch", "case",
+      "break", "continue", "try", "catch", "throw", "virtual", "override",
+      "public", "private", "protected", "static", "nullptr", "true", "false",
+      "std", "string", "vector", "map", "set", "cout", "cin", "endl"],
+     {
+         "function": (
+             "{return_type} {name}({params}) {{\n"
+             "{body}\n"
+             "}}\n"
+         ),
+         "class": (
+             "class {name} {{\n"
+             "public:\n"
+             "    {name}({params}) {{\n"
+             "        {body}\n"
+             "    }}\n"
+             "}};\n"
+         ),
+         "main": (
+             "int main() {{\n"
+             "    {body}\n"
+             "    return 0;\n"
+             "}}\n"
+         ),
+     },
+     "#include <iostream>\n#include <string>\n#include <vector>\n\n"
+),
+
+# ── Java ──────────────────────────────────────────────────────────
+_reg("Java", ".java", "//",
+     ["public", "private", "protected", "static", "final", "abstract", "class",
+      "interface", "extends", "implements", "new", "this", "super", "return",
+      "if", "else", "for", "while", "do", "switch", "case", "break", "continue",
+      "try", "catch", "finally", "throw", "throws", "void", "int", "long",
+      "double", "float", "boolean", "char", "String", "null", "true", "false"],
+     {
+         "function": (
+             "public {return_type} {name}({params}) {{\n"
+             "{body}\n"
+             "}}\n"
+         ),
+         "class": (
+             "public class {name} {{\n"
+             "    public {name}({params}) {{\n"
+             "        {body}\n"
+             "    }}\n"
+             "}}\n"
+         ),
+         "main": (
+             "public static void main(String[] args) {{\n"
+             "    {body}\n"
+             "}}\n"
+         ),
+     },
+     "public class Main {\n"
+),
+
+# ── Go ───────────────────────────────────────────────────────────
+_reg("Go", ".go", "//",
+     ["func", "package", "import", "return", "if", "else", "for", "range",
+      "switch", "case", "default", "break", "continue", "go", "chan", "select",
+      "struct", "interface", "map", "var", "const", "type", "defer", "nil",
+      "true", "false", "fmt", "int", "string", "bool", "float64", "error"],
+     {
+         "function": (
+             "func {name}({params}) {return_type} {{\n"
+             "{body}\n"
+             "}}\n"
+         ),
+         "struct": (
+             "type {name} struct {{\n"
+             "    {body}\n"
+             "}}\n"
+         ),
+         "main": (
+             "func main() {{\n"
+             "    {body}\n"
+             "}}\n"
+         ),
+     },
+     "package main\n\nimport \"fmt\"\n\n"
+),
+
+# ── Rust ──────────────────────────────────────────────────────────
+_reg("Rust", ".rs", "//",
+     ["fn", "let", "mut", "pub", "struct", "enum", "impl", "trait", "use",
+      "mod", "return", "if", "else", "for", "while", "loop", "match", "break",
+      "continue", "self", "Self", "super", "crate", "async", "await",
+      "move", "ref", "dyn", "where", "type", "const", "static", "unsafe",
+      "true", "false", "Some", "None", "Ok", "Err", "String", "Vec", "Box"],
+     {
+         "function": (
+             "fn {name}({params}) -> {return_type} {{\n"
+             "{body}\n"
+             "}}\n"
+         ),
+         "struct": (
+             "struct {name} {{\n"
+             "    {body}\n"
+             "}}\n"
+         ),
+         "main": (
+             "fn main() {{\n"
+             "    {body}\n"
+             "}}\n"
+         ),
+     },
+),
+
+# ── PHP ──────────────────────────────────────────────────────────
+_reg("PHP", ".php", "//",
+     ["function", "class", "extends", "implements", "new", "this", "self",
+      "return", "if", "else", "elseif", "for", "foreach", "while", "do",
+      "switch", "case", "break", "continue", "try", "catch", "finally",
+      "throw", "public", "private", "protected", "static", "abstract",
+      "interface", "trait", "namespace", "use", "echo", "print", "var",
+      "const", "array", "null", "true", "false", "None"],
+     {
+         "function": (
+             "<?php\n\n/** TODO: description */\n"
+             "function {name}({params}) {{\n"
+             "{body}\n"
+             "}}\n"
+         ),
+         "class": (
+             "<?php\n\nclass {name} {{\n"
+             "    public function __construct({params}) {{\n"
+             "        {body}\n"
+             "    }}\n"
+             "}}\n"
+         ),
+         "main": "<?php\n\n{body}\n",
+     },
+     "<?php\n"
+),
+
+# ── Ruby ──────────────────────────────────────────────────────────
+_reg("Ruby", ".rb", "#",
+     ["def", "class", "module", "end", "if", "elsif", "else", "unless",
+      "while", "until", "for", "do", "break", "next", "return", "yield",
+      "lambda", "proc", "begin", "rescue", "ensure", "raise", "require",
+      "include", "extend", "attr_reader", "attr_writer", "attr_accessor",
+      "self", "super", "nil", "true", "false", "puts", "print", "gets"],
+     {
+         "function": (
+             "# TODO: description\n"
+             "def {name}({params})\n"
+             "{body}\n"
+             "end\n"
+         ),
+         "class": (
+             "class {name}\n"
+             "    def initialize({params})\n"
+             "        {body}\n"
+             "    end\n"
+             "end\n"
+         ),
+         "main": "{body}\n",
+     },
+),
+
+# ── Swift ─────────────────────────────────────────────────────────
+_reg("Swift", ".swift", "//",
+     ["func", "class", "struct", "enum", "protocol", "extension", "import",
+      "return", "if", "else", "for", "while", "repeat", "switch", "case",
+      "default", "break", "continue", "guard", "defer", "try", "catch",
+      "throw", "throws", "async", "await", "let", "var", "inout",
+      "public", "private", "internal", "static", "mutating",
+      "true", "false", "nil", "print", "String", "Int", "Double", "Bool", "Array"],
+     {
+         "function": (
+             "/// TODO: description\n"
+             "func {name}({params}) -> {return_type} {{\n"
+             "{body}\n"
+             "}}\n"
+         ),
+         "class": (
+             "class {name} {{\n"
+             "    init({params}) {{\n"
+             "        {body}\n"
+             "    }}\n"
+             "}}\n"
+         ),
+         "main": "{body}\n",
+     },
+),
+
+# ── Kotlin ────────────────────────────────────────────────────────
+_reg("Kotlin", ".kt", "//",
+     ["fun", "class", "interface", "object", "data", "sealed", "enum",
+      "val", "var", "return", "if", "else", "when", "for", "while", "do",
+      "break", "continue", "try", "catch", "finally", "throw", "is", "as",
+      "in", "by", "lazy", "companion", "private", "public", "protected",
+      "internal", "override", "open", "abstract", "annotation",
+      "true", "false", "null", "println", "String", "Int", "Double", "Boolean", "List", "Map"],
+     {
+         "function": (
+             "// TODO: description\n"
+             "fun {name}({params}): {return_type} {{\n"
+             "{body}\n"
+             "}}\n"
+         ),
+         "class": (
+             "class {name}({params}) {{\n"
+             "    {body}\n"
+             "}}\n"
+         ),
+         "main": (
+             "fun main() {{\n"
+             "    {body}\n"
+             "}}\n"
+         ),
+     },
+),
+
+# ── C# ────────────────────────────────────────────────────────────
+_reg("C#", ".cs", "//",
+     ["class", "struct", "interface", "enum", "namespace", "using", "public",
+      "private", "protected", "internal", "static", "virtual", "override",
+      "abstract", "sealed", "new", "this", "base", "return", "if", "else",
+      "for", "foreach", "while", "do", "switch", "case", "break", "continue",
+      "try", "catch", "finally", "throw", "async", "await", "var", "val",
+      "int", "string", "bool", "double", "float", "decimal", "void",
+      "null", "true", "false", "Console", "List", "Dictionary"],
+     {
+         "function": (
+             "/// TODO: description\n"
+             "public {return_type} {name}({params}) {{\n"
+             "{body}\n"
+             "}}\n"
+         ),
+         "class": (
+             "public class {name} {{\n"
+             "    public {name}({params}) {{\n"
+             "        {body}\n"
+             "    }}\n"
+             "}}\n"
+         ),
+         "main": (
+             "static void Main(string[] args) {{\n"
+             "    {body}\n"
+             "}}\n"
+         ),
+     },
+),
+
+# ── Lua ──────────────────────────────────────────────────────────
+_reg("Lua", ".lua", "--",
+     ["function", "end", "local", "return", "if", "then", "else", "elseif",
+      "for", "while", "do", "repeat", "until", "break", "continue",
+      "in", "pairs", "ipairs", "next", "select", "pcall", "xpcall",
+      "error", "assert", "type", "tostring", "tonumber", "print",
+      "require", "module", "nil", "true", "false", "self"],
+     {
+         "function": (
+             "-- TODO: description\n"
+             "function {name}({params})\n"
+             "{body}\n"
+             "end\n"
+         ),
+         "class": (
+             "{name} = {{}}\n"
+             "function {name}:new({params})\n"
+             "    local obj = {{}}\n"
+             "    setmetatable(obj, {{__index = {name}}})\n"
+             "    {body}\n"
+             "    return obj\n"
+             "end\n"
+         ),
+         "main": "{body}\n",
+     },
+),
+
+# ── Haskell ──────────────────────────────────────────────────────
+_reg("Haskell", ".hs", "--",
+     ["where", "let", "in", "if", "then", "else", "case", "of", "data",
+      "type", "newtype", "class", "instance", "deriving", "import",
+      "module", "do", "return", "IO", "Maybe", "Either", "True", "False",
+      "String", "Int", "Float", "Double", "Bool", "Char", "Int", "Integer"],
+     {
+         "function": (
+             "-- TODO: description\n"
+             "{name} :: {type_sig}\n"
+             "{name} {params} =\n"
+             "{body}\n"
+         ),
+         "data_type": (
+             "data {name} =\n"
+             "    {body}\n"
+             "    deriving (Show, Eq)\n"
+         ),
+         "main": (
+             "main :: IO ()\n"
+             "main = do\n"
+             "    {body}\n"
+         ),
+     },
+     "-- Language: Haskell\n\n"
+),
+
+# ── SQL ──────────────────────────────────────────────────────────
+_reg("SQL", ".sql", "--",
+     ["SELECT", "FROM", "WHERE", "INSERT", "INTO", "VALUES", "UPDATE",
+      "SET", "DELETE", "CREATE", "TABLE", "ALTER", "DROP", "INDEX",
+      "JOIN", "LEFT", "RIGHT", "INNER", "OUTER", "ON", "AND", "OR",
+      "NOT", "NULL", "IS", "IN", "BETWEEN", "LIKE", "ORDER", "BY",
+      "GROUP", "HAVING", "LIMIT", "OFFSET", "AS", "DISTINCT", "COUNT",
+      "SUM", "AVG", "MIN", "MAX", "UNION", "ALL", "EXISTS", "CASE",
+      "WHEN", "THEN", "ELSE", "END", "PRIMARY", "KEY", "FOREIGN",
+      "REFERENCES", "CONSTRAINT", "DEFAULT", "AUTO_INCREMENT", "VARCHAR",
+      "INTEGER", "TEXT", "BOOLEAN", "DATE", "TIMESTAMP", "FLOAT", "DOUBLE"],
+     {
+         "select": (
+             "SELECT {columns}\nFROM {table}\nWHERE {condition};\n"
+         ),
+         "insert": (
+             "INSERT INTO {table} ({columns})\nVALUES ({values});\n"
+         ),
+         "create_table": (
+             "CREATE TABLE {name} (\n{columns}\n);\n"
+         ),
+     },
+),
+
+# ── Shell/Bash ───────────────────────────────────────────────────
+_reg("Bash", ".sh", "#",
+     ["echo", "if", "then", "else", "elif", "fi", "for", "while", "do",
+      "done", "case", "esac", "function", "return", "exit", "local",
+      "export", "source", "alias", "unalias", "set", "unset", "shift",
+      "read", "test", "[", "[[", "expr", "let", "declare", "readonly",
+      "true", "false", "in", "select"],
+     {
+         "function": (
+             "#!/bin/bash\n\n"
+             "# TODO: description\n"
+             "{name}() {{\n"
+             "{body}\n"
+             "}}\n"
+         ),
+         "main": (
+             "#!/bin/bash\n\n"
+             "{body}\n"
+         ),
+     },
+     "#!/bin/bash\nset -euo pipefail\n\n"
+),
+
+# ── YAML ─────────────────────────────────────────────────────────
+_reg("YAML", ".yaml", "#",
+     ["key", "value", "true", "false", "null", "yes", "no"],
+     {
+         "document": "{body}\n",
+     },
+),
+
+# ── JSON ─────────────────────────────────────────────────────────
+_reg("JSON", ".json", "",
+     ["true", "false", "null"],
+     {
+         "object": "{{\n{body}\n}}\n",
+     },
+),
+
+# ── Markdown ─────────────────────────────────────────────────────
+_reg("Markdown", ".md", "",
+     ["#", "##", "###", "**", "*", "`", "```", "-", "[", "]", "(", ")"],
+     {
+         "document": "# {title}\n\n{body}\n",
+     },
+),
+
+# ── HTML ─────────────────────────────────────────────────────────
+_reg("HTML", ".html", "",
+     ["html", "head", "body", "div", "span", "p", "a", "h1", "h2", "h3",
+      "ul", "ol", "li", "table", "tr", "td", "th", "form", "input",
+      "button", "script", "style", "link", "meta", "title", "img"],
+     {
+         "page": (
+             "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n"
+             "    <meta charset=\"UTF-8\">\n"
+             "    <title>{title}</title>\n"
+             "</head>\n<body>\n{body}\n</body>\n</html>\n"
+         ),
+     },
+),
+
+# ── CSS ──────────────────────────────────────────────────────────
+_reg("CSS", ".css", "",
+     ["color", "background", "margin", "padding", "border", "display",
+      "position", "width", "height", "font", "text", "flex", "grid",
+      "transition", "animation", "transform", "media", "hover"],
+     {
+         "rule": (
+             "{selector} {{\n{properties}\n}}\n"
+         ),
+     },
+),
+
+# ── Regex helpers ────────────────────────────────────────────────
+ALIAS_MAP = {
+    "py": "python", "python3": "python", "py3": "python",
+    "js": "javascript", "node": "javascript", "nodejs": "javascript",
+    "ts": "typescript",
+    "c++": "c++", "cpp": "c++", "cxx": "c++",
+    "c#": "c#", "cs": "c#", "csharp": "c#",
+    "rb": "ruby",
+    "kt": "kotlin",
+    "golang": "go",
+    "sh": "bash", "shell": "bash", "zsh": "bash",
+    "yml": "yaml",
+    "md": "markdown",
+    "htm": "html",
+    "hs": "haskell",
+    "sql": "sql",
+    "css": "css",
+    "lua": "lua",
+    "swift": "swift",
+    "rs": "rust",
+}
+
+TASK_KEYWORD_MAP = {
+    "python": ["python", "пайтон", "питон"],
+    "javascript": ["javascript", "js", "джаваскрипт", "джс", ".node"],
+    "typescript": ["typescript", "ts", "тайпскрипт"],
+    "c": ["на си", " на c ", "c lang", "ansi c"],
+    "c++": ["c++", "плюсы", "cpp"],
+    "java": ["java", "джава"],
+    "go": ["go", "голанг", "го ", "golang"],
+    "rust": ["rust", "раст"],
+    "php": ["php", "пхп"],
+    "ruby": ["ruby", "руби"],
+    "swift": ["swift", "свифт"],
+    "kotlin": ["kotlin", "котлин", "котлиниум"],
+    "c#": ["c#", "csharp", "шарп"],
+    "lua": ["lua", "луа"],
+    "haskell": ["haskell", "хаскель"],
+    "sql": ["sql", "запрос", "таблиц"],
+    "bash": ["bash", "shell", "шелл", "скрипт"],
+    "yaml": ["yaml", "yml", "конфиг"],
+    "json": ["json", "джейсон"],
+    "html": ["html", "страниц", "сайт", "веб-страниц"],
+    "css": ["css", "стил", "дизайн"],
+    "markdown": ["markdown", "md", "разметк"],
+}
+
+
+class LanguageRegistry:
+    @staticmethod
+    def get_all() -> Dict[str, LanguageInfo]:
+        return dict(LANGUAGES)
+
+    @staticmethod
+    def get(name: str) -> Optional[LanguageInfo]:
+        key = name.lower().strip()
+        key = ALIAS_MAP.get(key, key)
+        return LANGUAGES.get(key)
+
+    @staticmethod
+    def supported() -> List[str]:
+        return sorted(LANGUAGES.keys())
+
+    @staticmethod
+    def detect_language(task: str) -> Optional[str]:
+        task_lower = task.lower()
+        best = None
+        best_score = 0
+        for lang, keywords in TASK_KEYWORD_MAP.items():
+            score = sum(1 for kw in keywords if kw in task_lower)
+            if score > best_score:
+                best_score = score
+                best = lang
+        return best
+
+    @staticmethod
+    def ext_to_lang(ext: str) -> Optional[str]:
+        ext = ext.lower().strip().lstrip('.')
+        for lang, info in LANGUAGES.items():
+            if info.ext.lstrip('.') == ext:
+                return lang
+        return None
+
+
+# ---
+
+"""Модуль самообучения агента — рекурсивный, многопоточный, с прогресс-баром."""
+
+import json
+import os
+import random
+import re
+import sys
+import time
+import hashlib
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.request import Request, urlopen
+from urllib.error import URLError, HTTPError
+from html.parser import HTMLParser
+from pathlib import Path
+from datetime import datetime
+
+
+# ── Утилита для прогресс-бара ──────────────────────────────────────────
+class ProgressBar:
+    def __init__(self, total: int, prefix: str = "", width: int = 30):
+        self.total = max(total, 1)
+        self.prefix = prefix
+        self.width = width
+        self.current = 0
+        self.start_time = time.time()
+        self.lock = threading.Lock()
+
+    def update(self, n: int = 1, extra: str = ""):
+        with self.lock:
+            self.current += n
+            self._render(extra)
+
+    def _render(self, extra: str = ""):
+        pct = self.current / self.total
+        filled = int(self.width * pct)
+        bar = "=" * filled + "-" * (self.width - filled)
+        elapsed = time.time() - self.start_time
+        speed = self.current / elapsed if elapsed > 0 else 0
+        eta = (self.total - self.current) / speed if speed > 0 else 0
+        sys.stdout.write(
+            f"\r  [{bar}] {self.current}/{self.total} "
+            f"({pct:.0%}) {speed:.1f}/s ETA:{eta:.0f}s {extra}"
+        )
+        sys.stdout.flush()
+
+    def finish(self):
+        self._render()
+        sys.stdout.write("\n")
+
+
+# ── Парсер HTML → текст ───────────────────────────────────────────────
+class ContentExtractor(HTMLParser):
+    """Извлекает текст из HTML, пропуская скрипты, стили, навигацию."""
+
+    SKIP_TAGS = {"script", "style", "nav", "footer", "header", "aside", "form", "noscript"}
+
+    def __init__(self):
+        super().__init__()
+        self._chunks: list[str] = []
+        self._skip_depth = 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self.SKIP_TAGS:
+            self._skip_depth += 1
+
+    def handle_endtag(self, tag):
+        if tag in self.SKIP_TAGS:
+            self._skip_depth = max(0, self._skip_depth - 1)
+
+    def handle_data(self, data):
+        if self._skip_depth == 0:
+            text = data.strip()
+            if len(text) > 20:
+                self._chunks.append(text)
+
+    def get_text(self) -> str:
+        return "\n".join(self._chunks)
+
+
+# ── Динамический генератор тем ──────────────────────────────────────────
+# Минимальный набор примитивов для комбинаторной генерации.
+# Агент сам создаёт новые темы из этих кирпичиков + из уже изученного.
+
+_VERBS = [
+    "реализовать", "оптимизировать", "паттерн", "алгоритм", "структура",
+    "модель", "архитектура", "подход", "механизм", "принцип",
+    "концепция", "техника", "стратегия", "метод", "способ",
+]
+
+_NOUNS = [
+    "данных", "памяти", "производительности", "безопасности", "масштабируемости",
+    "параллелизма", "синхронизации", "вычислений", "ввода-вывода", "сети",
+    "файлов", "процессов", "потоков", "событий", "сообщений",
+    "зависимостей", "состояния", "конфигурации", "ошибок", "логирования",
+    "тестирования", "деплоя", "мониторинга", "кэширования", "сериализации",
+]
+
+_ADJECTIVES = [
+    "быстрый", "безопасный", "устойчивый", "масштабируемый", "эффективный",
+    "параллельный", "асинхронный", "атомарный", "консистентный", "идемпотентный",
+    "ленивый", "жадный", "оптимальный", "рекурсивный", "итеративный",
+]
+
+# Примитивы, из которых строятся темы ( substantially smaller than before )
+_CONCEPT_PARTS = [
+    "сортировка", "поиск", "граф", "дерево", "хэш",
+    "стек", "очередь", "список", "массив", "кэш",
+    "буфер", "очередь сообщений", "поток", "процесс", "контекст",
+    "замыкание", "итератор", "генератор", "декоратор", "метaclass",
+    "интерфейс", "абстракция", "наследование", "композиция", "полиморфизм",
+    "рекурсия", "мемоизация", "ленивые вычисления", "尾овая рекурсия",
+    "COROUTINE", "green thread", "callback", "promise", "signal",
+    "лека", "сигнатура", "тип", "сущность", "контракт",
+    "миграция", "транзакция", "индекс", "реплика", "шейarding",
+    "рендеринг", "парсинг", "генерация", "трансформация", "валидация",
+    "авторизация", "аутентификация", "шифрование", "хеширование", "подпись",
+    "CLI", "TUI", "GUI", "API", "SDK",
+    "CLI", "TUI", "GUI", "API", "SDK",
+]
+
+
+class TopicGenerator:
+    """Генерирует случайные темы на основе примитивов + уже изученного контента."""
+
+    def __init__(self):
+        self._learned_keywords: list[str] = []
+        self._used_hashes: set[str] = set()
+
+    def feed_learned(self, keywords: list[str]):
+        """Добавляет ключевые слова из изученного контента."""
+        for kw in keywords:
+            if kw not in self._learned_keywords and len(kw) > 3:
+                self._learned_keywords.append(kw)
+
+    def generate(self, lang: str = "") -> str:
+        """Генерирует новую уникальную тему."""
+        for _ in range(50):
+            topic = self._compose(lang)
+            h = hashlib.md5(topic.encode()).hexdigest()[:8]
+            if h not in self._used_hashes:
+                self._used_hashes.add(h)
+                return topic
+        # Фоллбэк — просто комбинация двух случайных слов
+        return f"{random.choice(_CONCEPT_PARTS)} и {random.choice(_CONCEPT_PARTS)}"
+
+    def _compose(self, lang: str) -> str:
+        """Составляет тему из примитивов."""
+        roll = random.random()
+
+        if roll < 0.25 and self._learned_keywords:
+            # Берём слово из уже изученного + примитив
+            kw = random.choice(self._learned_keywords)
+            noun = random.choice(_NOUNS)
+            return f"{kw} и {noun}"
+
+        if roll < 0.5:
+            #Adj + Noun: "быстрый поиск данных"
+            adj = random.choice(_ADJECTIVES)
+            noun = random.choice(_NOUNS)
+            return f"{adj} {noun}"
+
+        if roll < 0.7:
+            # Verb + Noun: "паттерн синхронизации"
+            verb = random.choice(_VERBS)
+            noun = random.choice(_NOUNS)
+            return f"{verb} {noun}"
+
+        if roll < 0.85:
+            # Два концепта: "дерево и кэш"
+            a, b = random.sample(_CONCEPT_PARTS, 2)
+            return f"{a} и {b}"
+
+        # Один конкретный концепт
+        return random.choice(_CONCEPT_PARTS)
+
+    def generate_search_url(self, topic: str, seed_lang: str = "") -> str:
+        """Генерирует URL поискового запроса по теме."""
+        q = topic.replace(" ", "+")
+        if seed_lang:
+            q += f"+{seed_lang}"
+        return f"https://www.google.com/search?q={q}+programming+tutorial"
+
+
+def random_topic(seed_lang: str = "", generator: TopicGenerator | None = None) -> str:
+    """Генерирует случайную тему. Если есть generator — использует его."""
+    if generator:
+        return generator.generate(seed_lang)
+    # Фоллбэк без генератора
+    return f"{random.choice(_CONCEPT_PARTS)} и {random.choice(_NOUNS)}"
+
+
+def random_search_queries(topic: str, count: int = 3) -> list[str]:
+    """Генерирует случайные поисковые запросы по теме."""
+    templates = [
+        "{topic} tutorial",
+        "{topic} examples",
+        "{topic} best practices",
+        "{topic} guide",
+        "how to implement {topic}",
+        "{topic} in programming",
+        "{topic} explained",
+        "learn {topic}",
+        "{topic} for beginners",
+        "{topic} advanced",
+    ]
+    selected = random.sample(templates, min(count, len(templates)))
+    return [t.format(topic=topic) for t in selected]
+
+
+# ── Сетевые утилиты ────────────────────────────────────────────────────
+def fetch_page(url: str, user_agent: str = "", timeout: int = 15) -> str | None:
+    """Загружает страницу, возвращает HTML или None."""
+    headers = {
+        "User-Agent": user_agent or "Mozilla/5.0 (compatible; Python-Ai-Agent/1.0)",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "en-US,en;q=0.9,ru;q=0.8",
+    }
+    req = Request(url, headers=headers)
+    try:
+        with urlopen(req, timeout=timeout) as resp:
+            raw = resp.read()
+            for enc in ("utf-8", "cp1251", "latin-1"):
+                try:
+                    return raw.decode(enc)
+                except UnicodeDecodeError:
+                    continue
+            return raw.decode("utf-8", errors="replace")
+    except (URLError, HTTPError, OSError, TimeoutError) as e:
+        print(f"  [ошибка] {url}: {e}")
+        return None
+
+
+def extract_content(html: str) -> str:
+    """Извлекает чистый текст из HTML."""
+    parser = ContentExtractor()
+    try:
+        parser.feed(html)
+    except Exception:
+        pass
+    return parser.get_text()
+
+
+def extract_code_blocks(html: str) -> list[str]:
+    """Извлекает блоки кода из HTML."""
+    blocks = []
+    print("working")
+
+    # <code> и <pre> теги
+    for match in re.finditer(r"<(?:code|pre)[^>]*>(.*?)</(?:code|pre)>", html, re.DOTALL | re.IGNORECASE):
+        code = re.sub(r"<[^>]+>", "", match.group(1)).strip()
+        if len(code) > 30:
+            blocks.append(code)
+    # Подсветка синтаксиса — <span class="...">
+    for match in re.finditer(r'<div[^>]*class="[^"]*highlight[^"]*"[^>]*>(.*?)</div>', html, re.DOTALL):
+        code = re.sub(r"<[^>]+>", "", match.group(1)).strip()
+        if len(code) > 30:
+            blocks.append(code)
+    return blocks
+
+
+def discover_links(base_url: str, html: str, max_links: int = 10) -> list[str]:
+    """Находит внутренние ссылки для рекурсивного обхода."""
+    links = []
+    # Извлекаем домен из base_url
+    proto_end = base_url.find("://")
+    if proto_end < 0:
+        return links
+    base_domain = base_url[proto_end + 3:].split("/")[0]
+
+    for match in re.finditer(r'href="([^"]+)"', html):
+        href = match.group(1)
+        full = href
+        if href.startswith("/"):
+            full = f"{base_url[:proto_end + 3]}{base_domain}{href}"
+        elif not href.startswith(("http://", "https://")):
+            continue
+        # Только внутренние ссылки
+        if base_domain in full and full not in links and len(links) < max_links:
+            links.append(full)
+    return links
+
+
+# ── Ключевые слова для генерации знаний ───────────────────────────────
+def keywordify(text: str, max_kw: int = 30) -> list[str]:
+    """Извлекает ключевые слова из текста."""
+    # Убираем код
+    text = re.sub(r"```[\s\S]*?```", " ", text)
+    text = re.sub(r"`[^`]+`", " ", text)
+    # Разбиваем на слова
+    words = re.findall(r"[a-zA-Z_][a-zA-Z0-9_]{2,}", text)
+    # Частотный анализ
+    freq: dict[str, int] = {}
+    for w in words:
+        wl = w.lower()
+        if wl not in _STOP_WORDS:
+            freq[wl] = freq.get(wl, 0) + 1
+    # Сортируем по частоте
+    sorted_kw = sorted(freq.items(), key=lambda x: -x[1])
+    return [kw for kw, _ in sorted_kw[:max_kw]]
+
+
+_STOP_WORDS = frozenset({
+    "the", "and", "for", "that", "this", "with", "you", "your", "are",
+    "can", "will", "not", "but", "all", "has", "had", "was", "have",
+    "from", "they", "been", "said", "each", "which", "their", "will",
+    "one", "would", "there", "what", "about", "into", "out", "some",
+    "them", "than", "then", "other", "more", "when", "how", "its",
+    "also", "just", "only", "over", "such", "after", "most", "any",
+    "very", "our", "use", "are", "may", "being", "should", "could",
+    "would", "does", "did", "while", "where", "those", "these",
+})
+
+
+# ── Состояние прогресса (для восстановления после прерывания) ─────────
+PROGRESS_FILE = "data/learning_progress.json"
+
+
+class LearningProgress:
+    """Хранит и восстанавливает состояние обучения."""
+
+    def __init__(self):
+        self.visited_urls: set[str] = set()
+        self.learned_topics: list[str] = []
+        self.knowledge_count: int = 0
+        self.start_depth: int = 0
+        self._load()
+
+    def _path(self) -> Path:
+        return Path(PROGRESS_FILE)
+
+    def _load(self):
+        p = self._path()
+        if p.exists():
+            try:
+                data = json.loads(p.read_text(encoding="utf-8"))
+                self.visited_urls = set(data.get("visited_urls", []))
+                self.learned_topics = data.get("learned_topics", [])
+                self.knowledge_count = data.get("knowledge_count", 0)
+                self.start_depth = data.get("start_depth", 0)
+            except (json.JSONDecodeError, OSError):
+                pass
+
+    def save(self):
+        p = self._path()
+        p.parent.mkdir(parents=True, exist_ok=True)
+        data = {
+            "visited_urls": list(self.visited_urls),
+            "learned_topics": self.learned_topics[-100:],
+            "knowledge_count": self.knowledge_count,
+            "start_depth": self.start_depth,
+            "saved_at": datetime.now().isoformat(),
+        }
+        p.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def mark_visited(self, url: str):
+        self.visited_urls.add(url)
+
+    def add_topic(self, topic: str):
+        if topic not in self.learned_topics:
+            self.learned_topics.append(topic)
+
+    def reset(self):
+        self.visited_urls.clear()
+        self.learned_topics.clear()
+        self.knowledge_count = 0
+        self.start_depth = 0
+        self._path().unlink(missing_ok=True)
+
+
+# ── Главный класс самообучения ─────────────────────────────────────────
+class SelfEducator:
+    """Рекурсивный многопоточный самообучающийся модуль.
+
+    Использование:
+        edu = SelfEducator(vector_store)
+        edu.start(depth=3)  # 3 уровня глубины
+    """
+
+    def __init__(self, vector_store, sites_config: str = "sites.json"):
+        self.vs = vector_store
+        self.config = self._load_config(sites_config)
+        self.settings = self.config.get("settings", {})
+        self.max_depth = self.settings.get("max_depth", 3)
+        self.max_threads = self.settings.get("max_threads", 5)
+        self.timeout = self.settings.get("timeout_per_page", 15)
+        self.user_agent = self.settings.get("user_agent", "Python-Ai-Agent/1.0")
+        self.save_interval = self.settings.get("save_interval", 10)
+        self.progress = LearningProgress()
+        self.topic_gen = TopicGenerator()
+        self._stop_event = threading.Event()
+        self._lock = threading.Lock()
+        self._knowledge_buffer: list[tuple[str, str, list[str]]] = []
+        self._pages_fetched = 0
+        self._pages_total = 0
+
+    def _load_config(self, path: str) -> dict:
+        p = Path(path)
+        if not p.exists():
+            print(f"  [!] Конфиг {path} не найден, используем дефолт")
+            return {"sources": [], "settings": {"max_depth": 2, "max_threads": 3}}
+        return json.loads(p.read_text(encoding="utf-8"))
+
+    def stop(self):
+        """Останавливает обучение, сохраняет прогресс."""
+        self._stop_event.set()
+        print("\n  [!] Получен сигнал остановки, сохраняю прогресс...")
+        self._flush_buffer()
+        self.progress.save()
+
+    def _should_stop(self) -> bool:
+        return self._stop_event.is_set()
+
+    def _flush_buffer(self):
+        """Сбрасывает буфер знаний в векторное хранилище."""
+        with self._lock:
+            if not self._knowledge_buffer:
+                return
+            texts = []
+            metadatas = []
+            for content, source, keywords in self._knowledge_buffer:
+                texts.append(content)
+                metadatas.append({
+                    "source": source,
+                    "keywords": keywords,
+                    "learned_at": datetime.now().isoformat(),
+                })
+            self.vs.add_documents(texts, metadatas=metadatas)
+            self.progress.knowledge_count += len(self._knowledge_buffer)
+            self._knowledge_buffer.clear()
+
+    def _add_knowledge(self, content: str, source: str, keywords: list[str]):
+        """Добавляет знание в буфер."""
+        with self._lock:
+            self._knowledge_buffer.append((content, source, keywords))
+            if len(self._knowledge_buffer) >= self.save_interval:
+                self._flush_buffer()
+                self.progress.save()
+
+    def _process_page(self, url: str, topic: str, depth: int, progress: ProgressBar) -> list[str]:
+        """Обрабатывает одну страницу: скачивает, парсит, извлекает знания."""
+        if self._should_stop():
+            return []
+        if url in self.progress.visited_urls:
+            return []
+
+        self.progress.mark_visited(url)
+        html = fetch_page(url, self.user_agent, self.timeout)
+        if not html:
+            return []
+
+        text = extract_content(html)
+        code_blocks = extract_code_blocks(html)
+
+        # Сохраняем основной контент
+        if len(text) > 100:
+            kws = keywordify(text)
+            self._add_knowledge(text[:3000], source=url, keywords=kws)
+            self.topic_gen.feed_learned(kws)
+
+        # Сохраняем блоки кода отдельно
+        for block in code_blocks:
+            if len(block) > 50:
+                kws = keywordify(block)
+                self._add_knowledge(block, source=url, keywords=kws)
+
+        # Находим ссылки для рекурсии
+        next_links = discover_links(url, html, max_links=5)
+        self._pages_fetched += 1
+        progress.update(1, extra=f"  тема: {topic[:40]}")
+        return next_links
+
+    def _learn_from_source(self, source: dict, depth: int, progress: ProgressBar):
+        """Обучается из одного источника (рекурсивно)."""
+        if self._should_stop():
+            return
+
+        seed = source.get("topic_seed", "")
+        url = source["url"]
+        topic = self.topic_gen.generate(seed)
+        self.progress.add_topic(topic)
+
+        print(f"\n  [тема] {topic}")
+        print(f"  [url]  {url}")
+
+        # Обрабатываем корневую страницу
+        child_links = self._process_page(url, topic, depth, progress)
+
+        # Рекурсивно обходим дочерние ссылки
+        if child_links and depth < self.max_depth and not self._should_stop():
+            for link in child_links:
+                if self._should_stop():
+                    return
+                if link not in self.progress.visited_urls:
+                    self._process_page(link, topic, depth + 1, progress)
+
+    def start(self, depth: int | None = None):
+        """Запускает процесс самообучения.
+
+        Args:
+            depth: максимальная глубина рекурсии (None = из конфига)
+        """
+        if depth is not None:
+            self.max_depth = depth
+
+        sources = self.config.get("sources", [])
+        if not sources:
+            print("  [!] Нет источников для обучения")
+            return
+
+        total_est = len(sources) * 8 * self.max_depth  # грубая оценка
+        self._pages_total = total_est
+
+        print(f"\n{'=' * 60}")
+        print(f"  🎓 САМООБУЧЕНИЕ — {len(sources)} источников, глубина {self.max_depth}")
+        print(f"  Потоков: {self.max_threads} | Таймаут: {self.timeout}с")
+        print(f"  Уже изучено: {self.progress.knowledge_count} фрагментов")
+        print(f"  Ctrl+C — безопасная остановка с сохранением прогресса")
+        print(f"{'=' * 60}")
+
+        progress = ProgressBar(total_est, prefix="  Прогресс:")
+        interrupted = False
+
+        try:
+            # Запускаем ThreadPoolExecutor для параллельной загрузки
+            with ThreadPoolExecutor(max_workers=self.max_threads-2) as pool:
+                futures = []
+                for src in sources:
+                    if self._should_stop():
+                        break
+                    seed = src.get("topic_seed", "")
+                    url = src["url"]
+                    topic = self.topic_gen.generate(seed)
+                    self.progress.add_topic(topic)
+
+                    # Запускаем обработку в потоке
+                    fut = pool.submit(self._learn_from_source, src, 0, progress)
+                    futures.append((fut, topic, url))
+
+                # Ждём завершения
+                for fut, topic, url in futures:
+                    if self._should_stop():
+                        break
+                    try:
+                        fut.result(timeout=120)
+                    except TimeoutError:
+                        print(f"  [таймаут] {url}")
+                    except Exception as e:
+                        print(f"  [ошибка] {url}: {e}")
+
+        except KeyboardInterrupt:
+            interrupted = True
+            self.stop()
+
+        # Финальный сброс буфера
+        self._flush_buffer()
+        self.progress.save()
+        progress.finish()
+
+        print(f"\n{'=' * 60}")
+        print(f"  Статистика:")
+        print(f"    Страниц обработано:   {self._pages_fetched}")
+        print(f"    Знаний накоплено:     {self.progress.knowledge_count}")
+        print(f"    Тем изучено:         {len(self.progress.learned_topics)}")
+        if interrupted:
+            print(f"    Прервано! Прогресс сохранён — запустите /learn для продолжения")
+        else:
+            print(f"    Готово!")
+        print(f"{'=' * 60}")
+
+        return {
+            "pages": self._pages_fetched,
+            "knowledge": self.progress.knowledge_count,
+            "topics": len(self.progress.learned_topics),
+            "interrupted": interrupted,
+        }
+
+    def clear_progress(self):
+        """Сбрасывает прогресс обучения."""
+        self.progress.reset()
+        print("  Прогресс обучения сброшен")
+
+
+# ---
+
+"""
+Чистое Python-векторное хранилище на TF-IDF.
+Без внешних зависимостей — использует JSON для хранения и TF-IDF + косинусное сходство для поиска.
+"""
+import json
+import math
+import os
+import re
+import uuid
+from collections import Counter
+from typing import Dict, List, Optional, Any
+
+
+def _tokenize(text: str) -> List[str]:
+    text = text.lower()
+    text = re.sub(r'[^\w\s]', ' ', text)
+    tokens = text.split()
+    stop = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+            'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+            'should', 'may', 'might', 'shall', 'can', 'need', 'dare', 'ought',
+            'used', 'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from',
+            'as', 'into', 'through', 'during', 'before', 'after', 'above', 'below',
+            'between', 'out', 'off', 'over', 'under', 'again', 'further', 'then',
+            'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'both',
+            'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor',
+            'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'just',
+            'don', 'now', 'и', 'в', 'на', 'не', 'что', 'это', 'как', 'по', 'для',
+            'от', 'из', 'к', 'с', 'но', 'а', 'о', 'у', 'ли', 'же', 'ни', 'бы',
+            'все', 'его', 'её', 'их', 'при', 'до', 'за', 'над', 'под', 'без'}
+    return [t for t in tokens if t not in stop and len(t) > 1]
+
+
+class LocalVectorStore:
+    def __init__(
+        self,
+        collection_name: str = "code_knowledge",
+        persist_directory: str = "data/knowledge",
+    ):
+        self.collection_name = collection_name
+        self.persist_dir = persist_directory
+        self.db_path = os.path.join(persist_directory, f"{collection_name}.json")
+        self.documents: List[Dict[str, Any]] = []
+        self.idf: Dict[str, float] = {}
+        self._dirty = False
+
+        os.makedirs(persist_directory, exist_ok=True)
+        self._load()
+
+        print(f"✅ Векторное хранилище готово (TF-IDF, чистый Python)")
+        print(f"   Коллекция: {collection_name} | Документов: {len(self.documents)}")
+
+    # ── Persistence ────────────────────────────────────────────────
+    def _load(self):
+        if os.path.exists(self.db_path):
+            try:
+                with open(self.db_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                self.documents = data.get('documents', [])
+                self.idf = data.get('idf', {})
+            except Exception:
+                self.documents = []
+                self.idf = {}
+
+    def save(self):
+        with open(self.db_path, 'w', encoding='utf-8') as f:
+            json.dump({
+                'documents': self.documents,
+                'idf': self.idf,
+            }, f, ensure_ascii=False, indent=2)
+        self._dirty = False
+
+    def _rebuild_idf(self):
+        n = len(self.documents)
+        if n == 0:
+            self.idf = {}
+            return
+        doc_freq: Counter = Counter()
+        for doc in self.documents:
+            tokens = set(_tokenize(doc.get('text', '')))
+            for t in tokens:
+                doc_freq[t] += 1
+        self.idf = {}
+        for term, df in doc_freq.items():
+            self.idf[term] = math.log((n + 1) / (df + 1)) + 1
+
+    # ── TF-IDF helpers ────────────────────────────────────────────
+    def _tfidf_vector(self, text: str) -> Dict[str, float]:
+        tokens = _tokenize(text)
+        if not tokens:
+            return {}
+        tf = Counter(tokens)
+        total = len(tokens)
+        vec = {}
+        for term, count in tf.items():
+            idf = self.idf.get(term, math.log(len(self.documents) + 2))
+            vec[term] = (count / total) * idf
+        return vec
+
+    @staticmethod
+    def _cosine(a: Dict[str, float], b: Dict[str, float]) -> float:
+        if not a or not b:
+            return 0.0
+        common = set(a) & set(b)
+        if not common:
+            return 0.0
+        dot = sum(a[k] * b[k] for k in common)
+        norm_a = math.sqrt(sum(v * v for v in a.values()))
+        norm_b = math.sqrt(sum(v * v for v in b.values()))
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        return dot / (norm_a * norm_b)
+
+    # ── Public API ────────────────────────────────────────────────
+    def add_documents(
+        self,
+        texts: List[str],
+        metadatas: Optional[List[Dict]] = None,
+        ids: Optional[List[str]] = None,
+    ) -> List[str]:
+        if ids is None:
+            ids = [str(uuid.uuid4()) for _ in texts]
+        if metadatas is None:
+            metadatas = [{} for _ in texts]
+
+        for i, text in enumerate(texts):
+            self.documents.append({
+                'id': ids[i],
+                'text': text,
+                'metadata': metadatas[i],
+            })
+
+        self._rebuild_idf()
+        self._dirty = True
+        self.save()
+        return ids
+
+    def search(
+        self,
+        query: str,
+        n_results: int = 3,
+        where: Optional[Dict] = None,
+    ) -> List[Dict[str, Any]]:
+        if not self.documents:
+            return []
+
+        self._rebuild_idf()
+        q_vec = self._tfidf_vector(query)
+
+        scored = []
+        for doc in self.documents:
+            if where:
+                meta = doc.get('metadata', {})
+                match = all(meta.get(k) == v for k, v in where.items())
+                if not match:
+                    continue
+            d_vec = self._tfidf_vector(doc.get('text', ''))
+            sim = self._cosine(q_vec, d_vec)
+            scored.append((sim, doc))
+
+        scored.sort(key=lambda x: -x[0])
+        results = []
+        for sim, doc in scored[:n_results]:
+            results.append({
+                'id': doc['id'],
+                'text': doc['text'],
+                'metadata': doc.get('metadata', {}),
+                'distance': round(1.0 - sim, 4),
+            })
+        return results
+
+    def delete_document(self, doc_id: str) -> bool:
+        before = len(self.documents)
+        self.documents = [d for d in self.documents if d.get('id') != doc_id]
+        if len(self.documents) < before:
+            self._rebuild_idf()
+            self.save()
+            return True
+        return False
+
+    def count(self) -> int:
+        return len(self.documents)
+
+    def clear(self):
+        self.documents = []
+        self.idf = {}
+        self.save()
+
+
+# ---
+
+#!/usr/bin/env python3
+"""
+Сборка фокусного датасета для обучения мини-GPT.
+Цель: дать модели достаточно НЕбольшой, но высококачественный набор
+реальных Python-паттернов, чтобы она могла запомнить их с приемлемым
+числом шагов обучения и генерировать структурно-валидный код.
+"""
+import os
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+MODEL_DIR = os.path.join(ROOT, 'src', 'model')
+DATA = os.path.join(ROOT, 'data', 'tune')
+os.makedirs(DATA, exist_ok=True)
+
+# Включаем собственный код проекта (реальные паттерны)
+def gather_project_code():
+    chunks = []
+    for root, dirs, files in os.walk(ROOT):
+        dirs[:] = [d for d in dirs if d not in
+                   ('.git', '__pycache__', 'node_modules', '.venv', 'venv', 'data', 'tune')]
+        for fn in files:
+            if fn.endswith('.py'):
+                p = os.path.join(root, fn)
+                try:
+                    c = open(p, encoding='utf-8').read()
+                    if len(c) > 100:
+                        chunks.append(c)
+                except Exception:
+                    pass
+    return chunks
+
+# Ключевые идиомы, которые обязательно должны быть запомнены
+IDIOMS = [
+    """def solve_task(task):
+    \"\"\"Решает задачу, описанную в task.\"\"\"
+    result = []
+    for item in task:
+        if item:
+            result.append(item)
+    return result
+""",
+    """class Processor:
+    def __init__(self, data=None):
+        self.data = data or []
+
+    def add(self, item):
+        self.data.append(item)
+
+    def run(self):
+        return [self.transform(x) for x in self.data]
+
+    def transform(self, x):
+        return x
+""",
+    """def main():
+    import sys
+    args = sys.argv[1:]
+    if not args:
+        print("Нужны аргументы")
+        return
+    for arg in args:
+        print(f"arg: {arg}")
+
+if __name__ == "__main__":
+    main()
+""",
+    """def gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+
+def lcm(a, b):
+    return abs(a * b) // gcd(a, b) if a and b else 0
+""",
+    """import math
+
+def is_prime(n):
+    if n < 2:
+        return False
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if n % i == 0:
+            return False
+    return True
+""",
+]
+
+
+def build_tune_corpus():
+    parts = []
+    # Проектный код (реальные стили)
+    proj = gather_project_code()
+    parts.extend(proj)
+    # Идиомы, продублированные несколько раз для надёжного запоминания
+    for _ in range(6):
+        parts.extend(IDIOMS)
+
+    # Последовательно: отсортировать по длине, объединить
+    text = "\n\n# ---\n\n".join(parts)
+    out = os.path.join(DATA, 'tune_corpus.txt')
+    with open(out, 'w', encoding='utf-8') as f:
+        f.write(text)
+    print(f"Tune corpus: {len(text)} chars, {len(parts)} blocks -> {out}")
+    return out
+
+
+if __name__ == '__main__':
+    build_tune_corpus()
+
+
+# ---
+
+#!/usr/bin/env python3
+"""
+Генератор данных для обучения модели Mini-GPT.
+Создаёт тысячи примеров кода на Python для тренировки языковой модели.
+"""
+import os
+import random
+import json
+
+# ══════════════════════════════════════════════════════════════
+#  ШАБЛОНЫ КОДА
+# ══════════════════════════════════════════════════════════════
+
+FUNCTION_TEMPLATES = [
+    # Factorial
+    """def factorial(n):
+    if n <= 1:
+        return 1
+    return n * factorial(n - 1)
+""",
+
+    # Factorial iterative
+    """def factorial(n):
+    result = 1
+    for i in range(2, n + 1):
+        result *= i
+    return result
+""",
+
+    # Fibonacci
+    """def fibonacci(n):
+    if n <= 0:
+        return 0
+    if n == 1:
+        return 1
+    a, b = 0, 1
+    for _ in range(2, n + 1):
+        a, b = b, a + b
+    return b
+""",
+
+    # Fibonacci list
+    """def fibonacci_list(n):
+    if n <= 0:
+        return []
+    if n == 1:
+        return [0]
+    seq = [0, 1]
+    for i in range(2, n):
+        seq.append(seq[-1] + seq[-2])
+    return seq
+""",
+
+    # Is prime
+    """def is_prime(n):
+    if n < 2:
+        return False
+    for i in range(2, int(n**0.5) + 1):
+        if n % i == 0:
+            return False
+    return True
+""",
+
+    # Sum
+    """def sum_list(arr):
+    if not arr:
+        return 0
+    return sum(arr)
+""",
+
+    # Max
+    """def find_max(arr):
+    if not arr:
+        return None
+    result = arr[0]
+    for x in arr[1:]:
+        if x > result:
+            result = x
+    return result
+""",
+
+    # Min
+    """def find_min(arr):
+    if not arr:
+        return None
+    result = arr[0]
+    for x in arr[1:]:
+        if x < result:
+            result = x
+    return result
+""",
+
+    # Reverse string
+    """def reverse_string(s):
+    return s[::-1]
+""",
+
+    # Reverse string loop
+    """def reverse_string(s):
+    result = ""
+    for ch in s:
+        result = ch + result
+    return result
+""",
+
+    # Palindrome
+    """def is_palindrome(s):
+    s = s.lower().replace(' ', '')
+    return s == s[::-1]
+""",
+
+    # Sort
+    """def sort_list(arr):
+    return sorted(arr)
+""",
+
+    # Bubble sort
+    """def bubble_sort(arr):
+    n = len(arr)
+    for i in range(n):
+        for j in range(0, n - i - 1):
+            if arr[j] > arr[j + 1]:
+                arr[j], arr[j + 1] = arr[j + 1], arr[j]
+    return arr
+""",
+
+    # Binary search
+    """def binary_search(arr, target):
+    lo, hi = 0, len(arr) - 1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return -1
+""",
+
+    # GCD
+    """def gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+""",
+
+    # LCM
+    """def lcm(a, b):
+    return abs(a * b) // gcd(a, b) if a and b else 0
+""",
+
+    # FizzBuzz
+    """def fizzbuzz(n):
+    result = []
+    for i in range(1, n + 1):
+        if i % 15 == 0:
+            result.append("FizzBuzz")
+        elif i % 3 == 0:
+            result.append("Fizz")
+        elif i % 5 == 0:
+            result.append("Buzz")
+        else:
+            result.append(str(i))
+    return result
+""",
+
+    # Count vowels
+    """def count_vowels(s):
+    count = 0
+    for ch in s.lower():
+        if ch in 'aeiou':
+            count += 1
+    return count
+""",
+
+    # Count consonants
+    """def count_consonants(s):
+    count = 0
+    for ch in s.lower():
+        if ch.isalpha() and ch not in 'aeiou':
+            count += 1
+    return count
+""",
+
+    # Is even
+    """def is_even(n):
+    return n % 2 == 0
+""",
+
+    # Absolute value
+    """def abs_val(n):
+    return n if n >= 0 else -n
+""",
+
+    # Power
+    """def power(base, exp):
+    if exp == 0:
+        return 1
+    if exp < 0:
+        return 1.0 / power(base, -exp)
+    result = 1
+    for _ in range(exp):
+        result *= base
+    return result
+""",
+
+    # Square root
+    """def sqrt_approx(n, precision=0.00001):
+    if n < 0:
+        return None
+    if n == 0:
+        return 0
+    guess = n / 2.0
+    while abs(guess * guess - n) > precision:
+        guess = (guess + n / guess) / 2.0
+    return guess
+""",
+
+    # Average
+    """def average(arr):
+    if not arr:
+        return 0
+    return sum(arr) / len(arr)
+""",
+
+    # Median
+    """def median(arr):
+    if not arr:
+        return 0
+    sorted_arr = sorted(arr)
+    n = len(sorted_arr)
+    if n % 2 == 1:
+        return sorted_arr[n // 2]
+    return (sorted_arr[n // 2 - 1] + sorted_arr[n // 2]) / 2
+""",
+
+    # Mode
+    """def mode(arr):
+    if not arr:
+        return None
+    freq = {}
+    for x in arr:
+        freq[x] = freq.get(x, 0) + 1
+    return max(freq, key=freq.get)
+""",
+
+    # Flatten list
+    """def flatten(lst):
+    result = []
+    for item in lst:
+        if isinstance(item, list):
+            result.extend(flatten(item))
+        else:
+            result.append(item)
+    return result
+""",
+
+    # Remove duplicates
+    """def remove_duplicates(arr):
+    seen = set()
+    result = []
+    for x in arr:
+        if x not in seen:
+            seen.add(x)
+            result.append(x)
+    return result
+""",
+
+    # Is anagram
+    """def is_anagram(s1, s2):
+    return sorted(s1.lower().replace(' ', '')) == sorted(s2.lower().replace(' ', ''))
+""",
+
+    # Caesar cipher
+    """def caesar_cipher(text, shift):
+    result = ""
+    for ch in text:
+        if ch.isalpha():
+            base = ord('A') if ch.isupper() else ord('a')
+            result += chr((ord(ch) - base + shift) % 26 + base)
+        else:
+            result += ch
+    return result
+""",
+
+    # Matrix transpose
+    """def transpose(matrix):
+    return [[matrix[j][i] for j in range(len(matrix))] for i in range(len(matrix[0]))]
+""",
+
+    # Matrix multiply
+    """def matrix_multiply(a, b):
+    rows_a, cols_a = len(a), len(a[0])
+    rows_b, cols_b = len(b), len(b[0])
+    if cols_a != rows_b:
+        raise ValueError("Cannot multiply")
+    result = [[0 for _ in range(cols_b)] for _ in range(rows_a)]
+    for i in range(rows_a):
+        for j in range(cols_b):
+            for k in range(cols_a):
+                result[i][j] += a[i][k] * b[k][j]
+    return result
+""",
+
+    # Hanoi towers
+    """def hanoi(n, source, target, auxiliary):
+    if n == 1:
+        print(f"Move disk 1 from {source} to {target}")
+        return
+    hanoi(n - 1, source, auxiliary, target)
+    print(f"Move disk {n} from {source} to {target}")
+    hanoi(n - 1, auxiliary, target, source)
+""",
+
+    # Quick sort
+    """def quick_sort(arr):
+    if len(arr) <= 1:
+        return arr
+    pivot = arr[len(arr) // 2]
+    left = [x for x in arr if x < pivot]
+    middle = [x for x in arr if x == pivot]
+    right = [x for x in arr if x > pivot]
+    return quick_sort(left) + middle + quick_sort(right)
+""",
+
+    # Merge sort
+    """def merge_sort(arr):
+    if len(arr) <= 1:
+        return arr
+    mid = len(arr) // 2
+    left = merge_sort(arr[:mid])
+    right = merge_sort(arr[mid:])
+    return merge(left, right)
+
+def merge(left, right):
+    result = []
+    i = j = 0
+    while i < len(left) and j < len(right):
+        if left[i] <= right[j]:
+            result.append(left[i])
+            i += 1
+        else:
+            result.append(right[j])
+            j += 1
+    result.extend(left[i:])
+    result.extend(right[j:])
+    return result
+""",
+
+    # Stack
+    """class Stack:
+    def __init__(self):
+        self.items = []
+
+    def push(self, item):
+        self.items.append(item)
+
+    def pop(self):
+        if not self.is_empty():
+            return self.items.pop()
+        return None
+
+    def peek(self):
+        if not self.is_empty():
+            return self.items[-1]
+        return None
+
+    def is_empty(self):
+        return len(self.items) == 0
+
+    def size(self):
+        return len(self.items)
+""",
+
+    # Queue
+    """class Queue:
+    def __init__(self):
+        self.items = []
+
+    def enqueue(self, item):
+        self.items.append(item)
+
+    def dequeue(self):
+        if not self.is_empty():
+            return self.items.pop(0)
+        return None
+
+    def is_empty(self):
+        return len(self.items) == 0
+
+    def size(self):
+        return len(self.items)
+""",
+
+    # Linked list
+    """class Node:
+    def __init__(self, data):
+        self.data = data
+        self.next = None
+
+class LinkedList:
+    def __init__(self):
+        self.head = None
+
+    def append(self, data):
+        new_node = Node(data)
+        if not self.head:
+            self.head = new_node
+            return
+        current = self.head
+        while current.next:
+            current = current.next
+        current.next = new_node
+
+    def find(self, data):
+        current = self.head
+        while current:
+            if current.data == data:
+                return True
+            current = current.next
+        return False
+""",
+
+    # Binary tree
+    """class TreeNode:
+    def __init__(self, value):
+        self.value = value
+        self.left = None
+        self.right = None
+
+    def insert(self, value):
+        if value < self.value:
+            if self.left is None:
+                self.left = TreeNode(value)
+            else:
+                self.left.insert(value)
+        else:
+            if self.right is None:
+                self.right = TreeNode(value)
+            else:
+                self.right.insert(value)
+
+    def inorder(self):
+        result = []
+        if self.left:
+            result.extend(self.left.inorder())
+        result.append(self.value)
+        if self.right:
+            result.extend(self.right.inorder())
+        return result
+""",
+
+    # Hash table
+    """class HashTable:
+    def __init__(self, size=100):
+        self.size = size
+        self.table = [[] for _ in range(size)]
+
+    def _hash(self, key):
+        return hash(key) % self.size
+
+    def set(self, key, value):
+        idx = self._hash(key)
+        for pair in self.table[idx]:
+            if pair[0] == key:
+                pair[1] = value
+                return
+        self.table[idx].append([key, value])
+
+    def get(self, key):
+        idx = self._hash(key)
+        for pair in self.table[idx]:
+            if pair[0] == key:
+                return pair[1]
+        return None
+""",
+
+    # Graph BFS
+    """from collections import deque
+
+def bfs(graph, start):
+    visited = set()
+    queue = deque([start])
+    visited.add(start)
+    order = []
+
+    while queue:
+        vertex = queue.popleft()
+        order.append(vertex)
+        for neighbor in graph[vertex]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+    return order
+""",
+
+    # Graph DFS
+    """def dfs(graph, start, visited=None):
+    if visited is None:
+        visited = set()
+    visited.add(start)
+    order = [start]
+    for neighbor in graph[start]:
+        if neighbor not in visited:
+            order.extend(dfs(graph, neighbor, visited))
+    return order
+""",
+
+    # Dijkstra
+    """import heapq
+
+def dijkstra(graph, start):
+    distances = {node: float('inf') for node in graph}
+    distances[start] = 0
+    queue = [(0, start)]
+
+    while queue:
+        dist, node = heapq.heappop(queue)
+        if dist > distances[node]:
+            continue
+        for neighbor, weight in graph[node]:
+            new_dist = dist + weight
+            if new_dist < distances[neighbor]:
+                distances[neighbor] = new_dist
+                heapq.heappush(queue, (new_dist, neighbor))
+    return distances
+""",
+
+    # Knapsack
+    """def knapsack(weights, values, capacity):
+    n = len(weights)
+    dp = [[0 for _ in range(capacity + 1)] for _ in range(n + 1)]
+
+    for i in range(1, n + 1):
+        for w in range(capacity + 1):
+            dp[i][w] = dp[i-1][w]
+            if weights[i-1] <= w:
+                val = dp[i-1][w - weights[i-1]] + values[i-1]
+                if val > dp[i][w]:
+                    dp[i][w] = val
+    return dp[n][capacity]
+""",
+
+    # LRU Cache
+    """from collections import OrderedDict
+
+class LRUCache:
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.cache = OrderedDict()
+
+    def get(self, key):
+        if key in self.cache:
+            self.cache.move_to_end(key)
+            return self.cache[key]
+        return -1
+
+    def put(self, key, value):
+        if key in self.cache:
+            self.cache.move_to_end(key)
+        self.cache[key] = value
+        if len(self.cache) > self.capacity:
+            self.cache.popitem(last=False)
+""",
+]
+
+# ══════════════════════════════════════════════════════════════
+#  ДОПОЛНИТЕЛЬНЫЕ ПАТТЕРНЫ
+# ══════════════════════════════════════════════════════════════
+
+VARIABLE_NAMES = ['x', 'y', 'n', 'i', 'j', 'k', 'val', 'idx', 'count', 'result', 'data', 'item', 'num', 'arr', 'lst']
+OPERATORS = ['+', '-', '*', '//', '%', '**']
+COMPARISONS = ['<', '>', '<=', '>=', '==', '!=']
+LOOPS_FOR = [
+    "for i in range({n}):",
+    "for i in range({n}, 0, -1):",
+    "for i in range(0, {n}, 2):",
+    "for j in range({n}):",
+    "for x in range({n}):",
+    "for _ in range({n}):",
+]
+LOOPS_WHILE = [
+    "while {cond}:",
+    "while n > 0:",
+    "while i < {n}:",
+    "while True:",
+]
+IF_ELSE = [
+    "if {cond}:\n    {body}",
+    "if {cond}:\n    {body}\nelse:\n    {body2}",
+    "if {cond}:\n    {body}\nelif {cond2}:\n    {body}\nelse:\n    {body2}",
+]
+RETURN_STATEMENTS = [
+    "return {val}",
+    "return {val} + {val2}",
+    "return {val} * {val2}",
+    "return True",
+    "return False",
+    "return None",
+    "return []",
+    "return {{}}",
+    "return \"\"",
+    "return 0",
+    "return 1",
+    "return -1",
+]
+FUNCTION_DEF = [
+    "def {name}({params}):\n    {body}",
+    "def {name}(self, {params}):\n    {body}",
+]
+
+# ══════════════════════════════════════════════════════════════
+#  ГЕНЕРАТОРЫ
+# ══════════════════════════════════════════════════════════════
+
+def gen_random_function():
+    name = random.choice(['calculate', 'process', 'compute', 'evaluate', 'transform', 'analyze', 'optimize', 'validate', 'transform', 'perform'])
+    params = random.choice(['x', 'n', 'arr', 'data', 'items', 'values', 'a, b', 'x, y'])
+    body_lines = []
+
+    body_lines.append(f"    result = 0")
+    body_lines.append(f"    for i in range(n):")
+    op = random.choice(OPERATORS)
+    body_lines.append(f"        result = result {op} i")
+    body_lines.append(f"    return result")
+
+    body = "\n".join(body_lines)
+    return f"def {name}({params}):\n{body}\n"
+
+
+def gen_random_class():
+    name = random.choice(['Processor', 'Manager', 'Handler', 'Builder', 'Factory', 'Cache', 'Store', 'Queue', 'Pool', 'Wrapper'])
+    attrs = random.choice(['data', 'items', 'cache', 'buffer', 'queue', 'stack', 'registry', 'handlers', 'callbacks'])
+
+    code = f"""class {name}:
+    def __init__(self):
+        self.{attrs} = []
+
+    def add(self, item):
+        self.{attrs}.append(item)
+
+    def get_all(self):
+        return list(self.{attrs})
+
+    def clear(self):
+        self.{attrs} = []
+
+    def size(self):
+        return len(self.{attrs})
+
+"""
+    return code
+
+
+def gen_random_loop():
+    var = random.choice(VARIABLE_NAMES)
+    n = random.choice([10, 20, 50, 100])
+    loop = random.choice(LOOPS_FOR).format(n=n)
+    op = random.choice(OPERATORS)
+
+    body = f"    result = 0\n    {loop}\n        result = result {op} i\n    return result"
+
+    name = random.choice(['compute', 'sum_range', 'accumulate', 'calculate'])
+    return f"def {name}(n={n}):\n{body}\n"
+
+
+def gen_random_list_ops():
+    op = random.choice(['reverse', 'sort', 'filter', 'map', 'unique'])
+    if op == 'reverse':
+        return f"""def reverse_list(arr):
+    result = []
+    for i in range(len(arr) - 1, -1, -1):
+        result.append(arr[i])
+    return result
+"""
+    elif op == 'sort':
+        return f"""def custom_sort(arr):
+    for i in range(len(arr)):
+        for j in range(i + 1, len(arr)):
+            if arr[i] > arr[j]:
+                arr[i], arr[j] = arr[j], arr[i]
+    return arr
+"""
+    elif op == 'filter':
+        return f"""def filter_positive(arr):
+    return [x for x in arr if x > 0]
+"""
+    elif op == 'map':
+        return f"""def double_all(arr):
+    return [x * 2 for x in arr]
+"""
+    else:
+        return f"""def unique_elements(arr):
+    seen = set()
+    result = []
+    for x in arr:
+        if x not in seen:
+            seen.add(x)
+            result.append(x)
+    return result
+"""
+
+
+def gen_random_dict_ops():
+    return random.choice([
+        """def merge_dicts(a, b):
+    result = dict(a)
+    result.update(b)
+    return result
+""",
+        """def invert_dict(d):
+    return {v: k for k, v in d.items()}
+""",
+        """def count_keys(lst):
+    counts = {}
+    for item in lst:
+        counts[item] = counts.get(item, 0) + 1
+    return counts
+""",
+    ])
+
+
+def gen_random_string_ops():
+    return random.choice([
+        """def count_chars(s):
+    counts = {}
+    for ch in s:
+        counts[ch] = counts.get(ch, 0) + 1
+    return counts
+""",
+        """def remove_spaces(s):
+    return s.replace(' ', '')
+""",
+        """def capitalize_words(s):
+    return ' '.join(word.capitalize() for word in s.split())
+""",
+        """def is_pangram(s):
+    alphabet = set('abcdefghijklmnopqrstuvwxyz')
+    return alphabet <= set(s.lower())
+""",
+    ])
+
+
+def generate_dataset(output_path, num_samples=5000):
+    """Generate training dataset."""
+    all_code = []
+
+    print(f"  Generating {num_samples} code samples...")
+
+    # Fixed templates
+    for _ in range(len(FUNCTION_TEMPLATES)):
+        all_code.append(random.choice(FUNCTION_TEMPLATES))
+
+    # Random templates
+    generators = [
+        gen_random_function,
+        gen_random_class,
+        gen_random_loop,
+        gen_random_list_ops,
+        gen_random_dict_ops,
+        gen_random_string_ops,
+    ]
+
+    while len(all_code) < num_samples:
+        gen = random.choice(generators)
+        all_code.append(gen())
+
+    # Mix with imports and docstrings
+    prefixes = [
+        "#!/usr/bin/env python3\n",
+        "\"\"\"Module with various utility functions.\"\"\"\n",
+        "import os\nimport sys\nimport math\n",
+        "from collections import defaultdict, Counter\n",
+        "# Utility functions for data processing\n",
+        "",
+    ]
+
+    # Create training text by concatenating with delimiters
+    sep = "\n\n" + "=" * 60 + "\n\n"
+    training_text = sep.join(all_code)
+
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(training_text)
+
+    print(f"  Written {len(all_code)} samples to {output_path}")
+    print(f"  Total size: {len(training_text)} characters")
+    return training_text
+
+
+if __name__ == "__main__":
+    random.seed(42)
+    output_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'training')
+    os.makedirs(output_dir, exist_ok=True)
+
+    output_path = os.path.join(output_dir, 'code_corpus.txt')
+    text = generate_dataset(output_path, num_samples=3000)
+
+    # Also generate individual files for directory loading
+    files_dir = os.path.join(output_dir, 'code_files')
+    os.makedirs(files_dir, exist_ok=True)
+
+    for i, template in enumerate(FUNCTION_TEMPLATES):
+        fname = os.path.join(files_dir, f"sample_{i:04d}.py")
+        with open(fname, 'w', encoding='utf-8') as f:
+            f.write(template)
+
+    print(f"\n  Generated {len(FUNCTION_TEMPLATES)} individual code files in {files_dir}")
+    print(f"  Training corpus: {output_path}")
+    print(f"\n  To compile and train:")
+    print(f"    gcc -O2 -o minigpt.exe src/model/mini_gpt.c src/model/main.c -lm")
+    print(f"    minigpt.exe train data/training/code_files")
+
+
+# ---
+
+"""
+Матричные операции на чистом Python.
+Все вычисления — списки списков, без numpy/torch.
+"""
+import math
+import random
+
+
+def matmul(A, B):
+    """Умножение матриц: (m x k) * (k x n) -> (m x n)"""
+    m = len(A)
+    k = len(A[0])
+    n = len(B[0])
+    result = [[0.0] * n for _ in range(m)]
+    for i in range(m):
+        for j in range(n):
+            s = 0.0
+            for p in range(k):
+                s += A[i][p] * B[p][j]
+            result[i][j] = s
+    return result
+
+
+def matmul_transA(A, B):
+    """A^T * B: (k x m) * (k x n) -> (m x n) через A^T"""
+    k = len(A)
+    m = len(A[0])
+    n = len(B[0])
+    result = [[0.0] * n for _ in range(m)]
+    for i in range(m):
+        for j in range(n):
+            s = 0.0
+            for p in range(k):
+                s += A[p][i] * B[p][j]
+            result[i][j] = s
+    return result
+
+
+def matmul_transB(A, B):
+    """A * B^T: (m x k) * (n x k) -> (m x n)"""
+    m = len(A)
+    k = len(A[0])
+    n = len(B)
+    result = [[0.0] * n for _ in range(m)]
+    for i in range(m):
+        for j in range(n):
+            s = 0.0
+            for p in range(k):
+                s += A[i][p] * B[j][p]
+            result[i][j] = s
+    return result
+
+
+def transpose(M):
+    """Транспонирование матрицы"""
+    rows = len(M)
+    cols = len(M[0])
+    return [[M[i][j] for i in range(rows)] for j in range(cols)]
+
+
+def add_matrices(A, B):
+    """Поэлементное сложение"""
+    return [[A[i][j] + B[i][j] for j in range(len(A[0]))] for i in range(len(A))]
+
+
+def scale_matrix(M, s):
+    """Умножение матрицы на скаляр"""
+    return [[M[i][j] * s for j in range(len(M[0]))] for i in range(len(M))]
+
+
+def softmax(logits):
+    """Softmax по последней оси для списка векторов.
+    Вход: [[z1, z2, ...], ...] — батч векторов.
+    """
+    result = []
+    for row in logits:
+        max_val = max(row)
+        exps = [math.exp(x - max_val) for x in row]
+        s = sum(exps)
+        result.append([e / s for e in exps])
+    return result
+
+
+def softmax_3d(logits):
+    """Softmax для 3D тензора [batch][seq][vocab]"""
+    result = []
+    for batch in logits:
+        result.append(softmax(batch))
+    return result
+
+
+def layer_norm_forward(x, gamma, beta, eps=1e-5):
+    """Layer Normalization: x, gamma, beta — lists of dim size.
+    x: [batch][seq][dim]
+    """
+    batch_size = len(x)
+    seq_len = len(x[0])
+    dim = len(x[0][0])
+    result = []
+
+    for b in range(batch_size):
+        result_b = []
+        for s in range(seq_len):
+            vals = x[b][s]
+            mean = sum(vals) / dim
+            var = sum((v - mean) ** 2 for v in vals) / dim
+            norm = [(v - mean) / math.sqrt(var + eps) for v in vals]
+            out = [norm[i] * gamma[i] + beta[i] for i in range(dim)]
+            result_b.append(out)
+        result.append(result_b)
+
+    return result
+
+
+def cross_entropy_loss(logits, targets):
+    """Cross-entropy loss для батча.
+    logits: [batch][vocab] — после линейного слоя
+    targets: [batch] — индексы целевых токенов
+    """
+    total_loss = 0.0
+    batch_size = len(logits)
+    vocab_size = len(logits[0])
+
+    for b in range(batch_size):
+        logit = logits[b]
+        max_l = max(logit)
+        exps = [math.exp(x - max_l) for x in logit]
+        s = sum(exps)
+        probs = [e / s for e in exps]
+        target = targets[b]
+        total_loss -= math.log(max(probs[target], 1e-10))
+
+    return total_loss / batch_size
+
+
+def cross_entropy_grad(logits, targets):
+    """Градиент cross-entropy + softmax."""
+    batch_size = len(logits)
+    vocab_size = len(logits[0])
+    grad = [[0.0] * vocab_size for _ in range(batch_size)]
+
+    for b in range(batch_size):
+        logit = logits[b]
+        max_l = max(logit)
+        exps = [math.exp(x - max_l) for x in logit]
+        s = sum(exps)
+        probs = [e / s for e in exps]
+        target = targets[b]
+        for j in range(vocab_size):
+            grad[b][j] = probs[j] - (1.0 if j == target else 0.0)
+
+    return grad
+
+
+def relu(x):
+    """ReLU для матрицы"""
+    return [[max(0, v) for v in row] for row in x]
+
+
+def relu_grad(x):
+    """Градиент ReLU"""
+    return [[1.0 if v > 0 else 0.0 for v in row] for row in x]
+
+
+def add_bias(x, bias):
+    """Добавить bias к каждому вектору в батче.
+    x: [batch][seq][dim] или [batch][dim]
+    bias: [dim]
+    """
+    if isinstance(x[0][0], list):
+        # 3D: [batch][seq][dim]
+        return [
+            [
+                [x[b][s][i] + bias[i] for i in range(len(bias))]
+                for s in range(len(x[b]))
+            ]
+            for b in range(len(x))
+        ]
+    else:
+        # 2D: [batch][dim]
+        return [
+            [x[b][i] + bias[i] for i in range(len(bias))]
+            for b in range(len(x))
+        ]
+
+
+def zeros(rows, cols):
+    """Нулевая матрица"""
+    return [[0.0] * cols for _ in range(rows)]
+
+
+def rand_normal(rows, cols, scale=0.02):
+    """Матрица с нормальным распределением (Box-Muller)"""
+    result = []
+    for i in range(rows):
+        row = []
+        for j in range(cols):
+            u1 = max(random.random(), 1e-10)
+            u2 = random.random()
+            z = math.sqrt(-2 * math.log(u1)) * math.cos(2 * math.pi * u2)
+            row.append(z * scale)
+        result.append(row)
+    return result
+
+
+def embedding_lookup(table, indices):
+    """Lookup embedding по индексам.
+    table: [vocab_size][dim]
+    indices: [batch][seq]
+    Возвращает: [batch][seq][dim]
+    """
+    dim = len(table[0])
+    batch_size = len(indices)
+    seq_len = len(indices[0])
+    result = []
+    for b in range(batch_size):
+        result_b = []
+        for s in range(seq_len):
+            idx = indices[b][s]
+            result_b.append(list(table[idx]))
+        result.append(result_b)
+    return result
+
+
+def gather_grad(embedding_grad, indices, vocab_size, dim):
+    """Собрать градиент для embedding.
+    embedding_grad: [batch][seq][dim]
+    indices: [batch][seq]
+    Возвращает: [vocab_size][dim]
+    """
+    grad_table = [[0.0] * dim for _ in range(vocab_size)]
+    batch_size = len(indices)
+    seq_len = len(indices[0])
+    for b in range(batch_size):
+        for s in range(seq_len):
+            idx = indices[b][s]
+            for d in range(dim):
+                grad_table[idx][d] += embedding_grad[b][s][d]
+    return grad_table
+
+
+def clip_grad_norm(grads, max_norm=1.0):
+    """Gradient clipping по норме."""
+    total_sq = 0.0
+    for g in grads:
+        if isinstance(g[0], list):
+            for row in g:
+                for v in row:
+                    total_sq += v * v
+        else:
+            for v in g:
+                total_sq += v * v
+    norm = math.sqrt(total_sq)
+    if norm > max_norm:
+        scale = max_norm / norm
+        return [scale_matrix(g, scale) if isinstance(g[0], list) else [v * scale for v in g] for g in grads]
+    return grads
+
+
+# ---
+
+#!/usr/bin/env python3
+"""
+Python-обёртка для мини-GPT языковой модели на C (ctypes).
+Позволяет использовать модель из Python без внешних зависимостей.
+"""
+import ctypes
+import os
+import subprocess
+
+_MODEL_DIR = os.path.dirname(os.path.abspath(__file__))
+_ROOT = os.path.dirname(os.path.dirname(_MODEL_DIR))
+
+
+def _find_compiler():
+    for name in ('gcc', 'clang', 'cc'):
+        try:
+            r = subprocess.run([name, '--version'], capture_output=True)
+            if r.returncode == 0:
+                return name
+        except Exception:
+            continue
+    return None
+
+
+def compile_lib(lib_path=None, quiet=False):
+    """Компилирует C-библиотеку модели. Возвращает путь или None."""
+    if lib_path is None:
+        lib_path = os.path.join(_MODEL_DIR, 'minigpt_lib.dll')
+
+    if os.path.exists(lib_path):
+        return lib_path
+
+    compiler = _find_compiler()
+    if not compiler:
+        return None
+
+    src = os.path.join(_MODEL_DIR, 'mini_gpt.c')
+    host = os.path.join(_MODEL_DIR, 'minigpt_host.c')
+    cmd = [compiler, '-O2', '-shared', '-o', lib_path, src, host, '-lm']
+    if not quiet:
+        print(f"  Компиляция языковой модели: {' '.join(cmd)}")
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    if r.returncode != 0:
+        if not quiet:
+            print("  Ошибка компиляции:")
+            print(r.stderr)
+        return None
+    if not quiet:
+        print(f"  Модель скомпилирована: {lib_path}")
+    return lib_path if os.path.exists(lib_path) else None
+
+
+class MiniGPT:
+    """
+    Языковая модель на чистом C, вызываемая через ctypes.
+    Побайтовая токенизация (VOCAB_SIZE=256) — работает с любым текстом.
+
+    Модель живёт в куче C (host_init), передаётся как void*.
+    """
+
+    def __init__(self, model_path=None, lib_path=None, quiet=False):
+        self.lib = None
+        self._model = None
+
+        if lib_path is None:
+            lib_path = os.path.join(_MODEL_DIR, 'minigpt_lib.dll')
+
+        compile_lib(lib_path, quiet=quiet)
+
+        if not os.path.exists(lib_path):
+            raise RuntimeError(
+                f"Библиотека {lib_path} не найдена. Установите gcc "
+                f"(MSYS2/MinGW) и запустите снова.")
+
+        self.lib = ctypes.CDLL(lib_path)
+        self._setup_signatures()
+        self._model = self.lib.host_init()
+
+        if model_path and os.path.exists(model_path):
+            self.load(model_path)
+
+    # ── Сигнатуры ───────────────────────────────────────────────
+    def _setup_signatures(self):
+        L = self.lib
+
+        L.host_init.argtypes = []
+        L.host_init.restype = ctypes.c_void_p
+
+        L.host_free.argtypes = [ctypes.c_void_p]
+
+        L.host_load.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+        L.host_load.restype = ctypes.c_int
+        L.host_save.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+        L.host_save.restype = ctypes.c_int
+        L.host_nparams.argtypes = [ctypes.c_void_p]
+        L.host_nparams.restype = ctypes.c_int
+
+        L.host_generate.argtypes = [ctypes.c_void_p,
+                                    ctypes.POINTER(ctypes.c_int),
+                                    ctypes.c_int, ctypes.c_int,
+                                    ctypes.c_float,
+                                    ctypes.POINTER(ctypes.c_int)]
+        L.host_generate.restype = ctypes.c_int
+
+        L.host_forward.argtypes = [ctypes.c_void_p,
+                                   ctypes.POINTER(ctypes.c_int),
+                                   ctypes.c_int, ctypes.c_int]
+        L.host_forward.restype = ctypes.c_float
+
+        L.host_train_step.argtypes = [ctypes.c_void_p,
+                                      ctypes.POINTER(ctypes.c_int),
+                                      ctypes.c_int]
+        L.host_train_step.restype = ctypes.c_float
+
+        L.host_train_data.argtypes = [ctypes.c_void_p,
+                                      ctypes.POINTER(ctypes.c_int),
+                                      ctypes.c_int, ctypes.c_int,
+                                      ctypes.c_int, ctypes.c_int]
+
+    # ── API ──────────────────────────────────────────────────────
+    def load(self, path):
+        return self.lib.host_load(self._model, os.fspath(path).encode())
+
+    def save(self, path):
+        return self.lib.host_save(self._model, os.fspath(path).encode())
+
+    def nparams(self):
+        return self.lib.host_nparams(self._model)
+
+    def generate(self, prompt, max_tokens=500, temperature=0.8):
+        text = prompt.encode('utf-8', errors='replace')
+        tokens = [c & 0xFF for c in text]
+        n_tok = len(tokens)
+
+        arr = (ctypes.c_int * max(1, n_tok))()
+        for i, t in enumerate(tokens):
+            arr[i] = t
+
+        out = (ctypes.c_int * max_tokens)()
+
+        n = self.lib.host_generate(self._model, arr, n_tok, max_tokens,
+                                   ctypes.c_float(temperature), out)
+
+        result = text + bytes(out[i] & 0xFF for i in range(n))
+        return result.decode('utf-8', errors='replace')
+
+    def close(self):
+        if self.lib and self._model:
+            self.lib.host_free(self._model)
+            self._model = None
+
+    def __del__(self):
+        try:
+            self.close()
+        except Exception:
+            pass
+
+
+def get_model(model_path=None, quiet=True):
+    """Возвращает экземпляр MiniGPT."""
+    if model_path and not os.path.exists(model_path):
+        model_path = None
+    return MiniGPT(model_path=model_path, quiet=quiet)
+
+
+if __name__ == "__main__":
+    m = MiniGPT()
+    print(f"Параметры: {m.nparams()}")
+    print(f"Генерация:\n{m.generate('def factorial(', max_tokens=200)}")
+    m.close()
+
+
+# ---
+
+#!/usr/bin/env python3
+"""
+Нейрогенератор кода — использует локальную языковую модель Mini-GPT (C)
+как "мозг" агента для генерации кода.
+
+Архитектура агента:
+  1. Нейрогенератор (MiniGPT, чистый C, через ctypes) — основной генератор.
+  2. Шаблонный генератор — запасной и для "ремонта" некорректного кода.
+  3. Оценщик (compile/анализ) — проверка валидности, цикл исправления.
+
+Всё работает локально, без облачных/внешних API.
+"""
+import os
+import re
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.model.minigpt_binding import MiniGPT, compile_lib
+
+_MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'model')
+DEFAULT_MODEL_PATH = os.path.join(_MODEL_DIR, 'model.bin')
+
+
+class NeuralGenerator:
+    """
+    Генерация кода нейросетью.
+    Промпт строится из задачи, язык подставляется, на выходе — код.
+    """
+
+    def __init__(self, model_path=None, temperature=0.7, max_tokens=600):
+        self.model_path = model_path or DEFAULT_MODEL_PATH
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+        self.model = None
+        self._loaded = False
+
+    def is_available(self) -> bool:
+        """Проверяет наличие скомпилированной модели."""
+        if self._loaded:
+            return True
+        return os.path.exists(self.model_path)
+
+    def load(self):
+        if not self._loaded:
+            if not os.path.exists(os.path.join(_MODEL_DIR, 'minigpt_lib.dll')):
+                ok = compile_lib(quiet=True)
+                if not ok:
+                    return False
+            self.model = MiniGPT(model_path=self.model_path, quiet=True)
+            self._loaded = True
+        return True
+
+    # ── Построение промпта ─────────────────────────────────────
+    def build_prompt(self, task: str, language: str, context: str = "") -> str:
+        prompt_lines = [
+            f"# Реши задачу: {task}",
+            f"# Язык: {language}",
+        ]
+        if context:
+            prompt_lines.append(f"# Похожее решение:\n{context[:500]}")
+        prompt_lines.append("```")
+        prompt_lines.append(f"# {language} solution:")
+        return "\n".join(prompt_lines) + "\n"
+
+    def generate(self, task: str, language: str = "python",
+                 context: str = "") -> tuple:
+        """
+        Возвращает (code, success).
+        success=True — модель доступна и сгенерирован непустой код.
+        """
+        if not self.load():
+            return "", False
+
+        prompt = self.build_prompt(task, language, context)
+        raw = self.model.generate(prompt, max_tokens=self.max_tokens,
+                                  temperature=self.temperature)
+
+        # Извлекаем код (после маркера решения и до закрывающего ``` )
+        code = self._extract_code(raw, prompt)
+        return code, bool(code.strip())
+
+    def _extract_code(self, raw: str, prompt: str) -> str:
+        # Убираем промпт из начала
+        code = raw[len(prompt):] if raw.startswith(prompt) else raw
+
+        # Обрезаем до маркера закрытия
+        for marker in ['```', '# End', '# end']:
+            idx = code.find(marker)
+            if idx != -1:
+                code = code[:idx]
+                break
+
+        # Обрезаем по последней пустой строке + лишние трейлинг-комментарии
+        lines = code.split('\n')
+        # Убираем пустые строки снизу
+        while lines and not lines[-1].strip():
+            lines.pop()
+        return '\n'.join(lines)
+
+    def close(self):
+        if self.model:
+            self.model.close()
+            self.model = None
+            self._loaded = False
+
+
+# ---
+
+#!/usr/bin/env python3
+"""
+Нейронный тренер Mini-GPT — обёртка над C-моделью с несколькими способами обучения.
+
+Режимы обучения:
+  1. corpus_learn    — обучение на корпусе кода (из data/training и заданных файлов).
+  2. self_learn      — обучение на собственном коде проекта (агент учится на себе).
+  3. knowledge_report— обучение на извлечённых знаниях (из векторного хранилища / web).
+  4. feedback_learn  — обучение на ранее сгенерированных и подтверждённо валидных решениях
+                      (усиление успешных решений агента).
+  5. eval            — оценка перплексии/потерь.
+"""
+import ctypes
+import os
+import random
+import sys
+import time
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from src.model.minigpt_binding import MiniGPT, compile_lib
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, ROOT)
+MODEL_DIR = os.path.join(ROOT, 'src', 'model')
+DATA_TRAIN = os.path.join(ROOT, 'data', 'training')
+DATA_KNOWLEDGE = os.path.join(ROOT, 'data', 'knowledge')
+DEFAULT_MODEL = os.path.join(MODEL_DIR, 'model.bin')
+
+CODE_EXTS = ('.py', '.c', '.js', '.ts', '.go', '.rs', '.h', '.cpp', '.java')
+
+
+def discover_code_files(root, extensions=CODE_EXTS):
+    files = []
+    if not os.path.isdir(root):
+        return files
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in
+                       ('.git', '__pycache__', 'node_modules', '.venv', 'venv', 'data')]
+        for fn in filenames:
+            if fn.endswith(extensions):
+                files.append(os.path.join(dirpath, fn))
+    return files
+
+
+def read_bytes(path):
+    try:
+        with open(path, 'rb') as f:
+            return f.read()
+    except Exception:
+        return b''
+
+
+class NeuralTrainer:
+    """Обучает языковую модель Mini-GPT на байтовом потоке данных."""
+
+    def __init__(self, model_path=None, lib_path=None, quiet=True):
+        self.model_path = model_path or DEFAULT_MODEL
+        if lib_path is None:
+            lib_path = os.path.join(MODEL_DIR, 'minigpt_lib.dll')
+        self.quiet = quiet
+        self.lib_path = lib_path
+        if not os.path.exists(lib_path):
+            compile_lib(lib_path, quiet=quiet)
+        self._m = None
+        self._lib = None
+
+    # ── Низкоуровневый доступ ─────────────────────────────────
+    def _load_model(self):
+        if self._m is not None:
+            return True
+        if not os.path.exists(self.lib_path):
+            return False
+        if self._lib is None:
+            import ctypes as C
+            self._lib = C.CDLL(self.lib_path)
+            self._lib.host_init.restype = C.c_void_p
+            self._lib.host_init.argtypes = []
+            self._lib.host_free.argtypes = [C.c_void_p]
+            self._lib.host_nparams.argtypes = [C.c_void_p]
+            self._lib.host_nparams.restype = C.c_int
+            self._lib.host_load.argtypes = [C.c_void_p, C.c_char_p]
+            self._lib.host_load.restype = C.c_int
+            self._lib.host_save.argtypes = [C.c_void_p, C.c_char_p]
+            self._lib.host_save.restype = C.c_int
+            self._lib.host_train_step.argtypes = [C.c_void_p, C.POINTER(C.c_int), C.c_int]
+            self._lib.host_train_step.restype = C.c_float
+            self._lib.host_forward.argtypes = [C.c_void_p, C.POINTER(C.c_int), C.c_int, C.c_int]
+            self._lib.host_forward.restype = C.c_float
+            # host_train_data: void* h, int* data, int len, int seq, int epochs, int print_every
+            self._lib.host_train_data.argtypes = [C.c_void_p, C.POINTER(C.c_int),
+                                                  C.c_int, C.c_int, C.c_int, C.c_int]
+            self._lib.host_generate.argtypes = [C.c_void_p, C.POINTER(C.c_int),
+                                                C.c_int, C.c_int, C.c_float, C.POINTER(C.c_int)]
+            self._lib.host_generate.restype = C.c_int
+        self._m = self._lib.host_init()
+        if os.path.exists(self.model_path):
+            self._lib.host_load(self._m, os.fspath(self.model_path).encode())
+        return True
+
+    def close(self):
+        if self._m is not None and self._lib is not None:
+            self._lib.host_free(self._m)
+            self._m = None
+
+    def nparams(self):
+        if not self._load_model():
+            return 0
+        return self._lib.host_nparams(self._m)
+
+    def save(self, path=None):
+        path = path or self.model_path
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        if not self._load_model():
+            return
+        self._lib.host_save(self._m, os.fspath(path).encode())
+
+    # ── Обучение шаг за шагом (полный контроль) ───────────────
+    def train_steps(self, data_bytes, seq_len=64, n_steps=1000, lr=None,
+                    print_every=100, start_offset=None, shuffle=True,
+                    model_path=None):
+        """Обучает на байтовом потоке фиксированное число шагов."""
+        import ctypes as C
+        if len(data_bytes) < seq_len + 1:
+            raise ValueError("Данных слишком мало для обучения")
+        if not self._load_model():
+            raise RuntimeError("Модель не загружена")
+        seq_len = min(seq_len, 256, len(data_bytes) - 1)
+        data = list(data_bytes)
+        arr = (C.c_int * len(data))(*data)
+        max_start = len(data) - seq_len - 1
+
+        max_off = max_start + 1
+        offsets = list(range(0, max_off, seq_len))
+        if shuffle:
+            random.shuffle(offsets)
+
+        t0 = time.time()
+        total_loss = 0.0
+        steps_done = 0
+        for i in range(n_steps):
+            off = offsets[i % len(offsets)]
+            ptr = C.cast(C.byref(arr, off * C.sizeof(C.c_int)), C.POINTER(C.c_int))
+            loss = self._lib.host_train_step(self._m, ptr, seq_len)
+            total_loss += loss
+            steps_done += 1
+            if print_every > 0 and (i + 1) % print_every == 0:
+                avg = total_loss / (i + 1)
+                print(f"  step {i+1}/{n_steps} | loss {loss:.4f} | avg {avg:.4f} | "
+                      f"{(time.time()-t0)/(i+1)*1000:.0f}ms/step")
+                if model_path and (i + 1) % (print_every * 20) == 0:
+                    self.save(model_path + '.chkpt')
+        print(f"  Обучение: {n_steps} шагов за {time.time()-t0:.1f}с, "
+              f"средняя потеря {total_loss/n_steps:.4f}")
+        if model_path:
+            self.save(model_path)
+        return total_loss / n_steps
+
+    def train_corpus(self, corpus_paths=(), seq_len=64, n_steps=1500, epochs_hint=0,
+                     print_every=100, model_path=None, extra_bytes=b''):
+        """Обучает на нескольких файлах корпуса."""
+        chunks = []
+        for p in corpus_paths:
+            if os.path.isdir(p):
+                for fp in discover_code_files(p):
+                    chunks.append(read_bytes(fp))
+            elif os.path.isfile(p):
+                chunks.append(read_bytes(p))
+        if extra_bytes:
+            chunks.append(extra_bytes)
+        data = b'\n\n'.join([c for c in chunks if c]) or b'\n'
+        return self.train_steps(data, seq_len=seq_len, n_steps=n_steps,
+                                print_every=print_every, model_path=model_path)
+
+    # ── Режимы обучения (разные способы) ──────────────────────
+    def learn_corpus(self, n_steps=2000, seq_len=64, corpus=None):
+        """Режим 1: обучение на корпусе кода."""
+        print("=" * 60)
+        print("  РЕЖИМ 1: ОБУЧЕНИЕ НА КОРПУСЕ КОДА")
+        print("=" * 60)
+        if corpus is None:
+            corpus = os.path.join(DATA_TRAIN, 'code_corpus.txt')
+        paths = [corpus] if isinstance(corpus, str) else list(corpus)
+        return self.train_corpus(paths, seq_len=seq_len, n_steps=n_steps)
+
+    def learn_self(self, n_steps=1500, seq_len=64):
+        """Режим 2: самообучение на собственном коде проекта."""
+        print("=" * 60)
+        print("  РЕЖИМ 2: САМООБУЧЕНИЕ НА КОДЕ ПРОЕКТА")
+        print("=" * 60)
+        files = discover_code_files(ROOT)
+        if not files:
+            print("  Нет файлов кода для самообучения")
+            return None
+        chunks = [read_bytes(f) for f in files]
+        data = b'\n\n'.join([c for c in chunks if c])
+        print(f"  Кода проекта: {len(files)} файлов, {len(data)} байт")
+        return self.train_steps(data, seq_len=seq_len, n_steps=n_steps)
+
+    def learn_knowledge(self, n_steps=1500, seq_len=64):
+        """Режим 3: обучение на извлечённых знаниях (векторное хранилище)."""
+        print("=" * 60)
+        print("  РЕЖИМ 3: ОБУЧЕНИЕ НА ЗНАНИЯХ (STORAGE)")
+        print("=" * 60)
+        text_parts = []
+        know_path = os.path.join(DATA_KNOWLEDGE, 'code_knowledge.json')
+        if os.path.exists(know_path):
+            try:
+                import json
+                with open(know_path, 'r', encoding='utf-8') as f:
+                    kdata = json.load(f)
+                docs = kdata.get('documents', [])
+                for d in docs:
+                    t = d.get('text', '')
+                    if len(t) > 30:
+                        text_parts.append(t)
+            except Exception as e:
+                print(f"  [!] {e}")
+        if not text_parts:
+            print("  Знаний нет — пропускаем (сначала запустите /learn)")
+            return None
+        data = b'\n\n'.join(t.encode('utf-8', errors='ignore') for t in text_parts)
+        print(f"  Фрагментов знаний: {len(text_parts)}, {len(data)} байт")
+        return self.train_steps(data, seq_len=seq_len, n_steps=n_steps)
+
+    def learn_feedback(self, solutions_dir='data/solutions', n_steps=1200, seq_len=64):
+        """Режим 4: обучение на подтверждённо валидных решениях агента."""
+        print("=" * 60)
+        print("  РЕЖИМ 4: ОБУЧЕНИЕ НА УСПЕШНЫХ РЕШЕНИЯХ")
+        print("=" * 60)
+        sol_dir = os.path.join(ROOT, solutions_dir)
+        files = []
+        if os.path.isdir(sol_dir):
+            for dp, dn, fn in os.walk(sol_dir):
+                for f in fn:
+                    if f.endswith('.py'):
+                        files.append(os.path.join(dp, f))
+        if not files:
+            print(f"  Решений пока нет в {sol_dir} — пропускаем")
+            return None
+        chunks = [read_bytes(f) for f in files]
+        data = b'\n\n'.join([c for c in chunks if c])
+        print(f"  Решений: {len(files)}, {len(data)} байт")
+        return self.train_steps(data, seq_len=seq_len, n_steps=n_steps)
+
+    # ── Оценка ────────────────────────────────────────────────
+    def evaluate(self, path, seq_len=64):
+        """Оценка перплексии на файле."""
+        import ctypes as C
+        if not self._load_model():
+            return None
+        data = read_bytes(path)
+        if len(data) < seq_len + 1:
+            print(f"  [{os.path.basename(path)}] мало данных для оценки")
+            return None
+        seq_len = min(seq_len, len(data) - 1)
+        total, cnt = 0.0, 0
+        for start in range(0, len(data) - seq_len, seq_len // 2):
+            seg = (C.c_int * seq_len)(*data[start:start + seq_len])
+            loss = self._lib.host_forward(self._m, seg, seq_len, seq_len - 1)
+            total += loss
+            cnt += 1
+        avg = total / cnt if cnt else None
+        if avg is not None:
+            print(f"  [{os.path.basename(path)}] loss {avg:.4f} | "
+                  f"perplexity {2**avg:.1f} ({cnt} окон)")
+        return avg
+
+
+def multi_mode_trainer(model_path=None):
+    """Запускает обучение по всем доступным режимам."""
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--steps', type=int, default=1500, help='Шагов на каждый режим')
+    ap.add_argument('--seq', type=int, default=64)
+    ap.add_argument('--mode', default='all',
+                    choices=['all', 'corpus', 'self', 'knowledge', 'feedback', 'eval'])
+    ap.add_argument('--model', default=None)
+    ap.add_argument('--eval-file', default=None)
+    ap.add_argument('--save', default=None)
+    args = ap.parse_args()
+
+    mp = args.model or DEFAULT_MODEL
+    tr = NeuralTrainer(model_path=mp)
+    if not tr._load_model():
+        print("  [!] Не удалось загрузить модель")
+        sys.exit(1)
+    print(f"  Параметры модели: {tr.nparams()}")
+    print(f"  Модель: {mp}")
+
+    if args.mode == 'eval' or (args.mode == 'all' and args.eval_file):
+        if args.eval_file:
+            tr.evaluate(args.eval_file, seq_len=args.seq)
+    elif args.mode == 'corpus':
+        tr.learn_corpus(n_steps=args.steps, seq_len=args.seq)
+    elif args.mode == 'self':
+        tr.learn_self(n_steps=args.steps, seq_len=args.seq)
+    elif args.mode == 'knowledge':
+        tr.learn_knowledge(n_steps=args.steps, seq_len=args.seq)
+    elif args.mode == 'feedback':
+        tr.learn_feedback(n_steps=args.steps, seq_len=args.seq)
+    else:
+        tr.learn_corpus(n_steps=args.steps, seq_len=args.seq)
+        tr.learn_self(n_steps=max(800, args.steps // 2), seq_len=args.seq)
+        tr.learn_knowledge(n_steps=max(500, args.steps // 3), seq_len=args.seq)
+
+    tr.save(args.save or mp)
+    tr.close()
+    print("\n  Обучение завершено. Модель сохранена:",
+          args.save or mp)
+
+
+if __name__ == "__main__":
+    multi_mode_trainer()
+
+
+# ---
+
+def solve_task(task):
+    """Решает задачу, описанную в task."""
+    result = []
+    for item in task:
+        if item:
+            result.append(item)
+    return result
+
+
+# ---
+
+class Processor:
+    def __init__(self, data=None):
+        self.data = data or []
+
+    def add(self, item):
+        self.data.append(item)
+
+    def run(self):
+        return [self.transform(x) for x in self.data]
+
+    def transform(self, x):
+        return x
+
+
+# ---
+
+def main():
+    import sys
+    args = sys.argv[1:]
+    if not args:
+        print("Нужны аргументы")
+        return
+    for arg in args:
+        print(f"arg: {arg}")
+
+if __name__ == "__main__":
+    main()
+
+
+# ---
+
+def gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+
+def lcm(a, b):
+    return abs(a * b) // gcd(a, b) if a and b else 0
+
+
+# ---
+
+import math
+
+def is_prime(n):
+    if n < 2:
+        return False
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if n % i == 0:
+            return False
+    return True
+
+
+# ---
+
+def solve_task(task):
+    """Решает задачу, описанную в task."""
+    result = []
+    for item in task:
+        if item:
+            result.append(item)
+    return result
+
+
+# ---
+
+class Processor:
+    def __init__(self, data=None):
+        self.data = data or []
+
+    def add(self, item):
+        self.data.append(item)
+
+    def run(self):
+        return [self.transform(x) for x in self.data]
+
+    def transform(self, x):
+        return x
+
+
+# ---
+
+def main():
+    import sys
+    args = sys.argv[1:]
+    if not args:
+        print("Нужны аргументы")
+        return
+    for arg in args:
+        print(f"arg: {arg}")
+
+if __name__ == "__main__":
+    main()
+
+
+# ---
+
+def gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+
+def lcm(a, b):
+    return abs(a * b) // gcd(a, b) if a and b else 0
+
+
+# ---
+
+import math
+
+def is_prime(n):
+    if n < 2:
+        return False
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if n % i == 0:
+            return False
+    return True
+
+
+# ---
+
+def solve_task(task):
+    """Решает задачу, описанную в task."""
+    result = []
+    for item in task:
+        if item:
+            result.append(item)
+    return result
+
+
+# ---
+
+class Processor:
+    def __init__(self, data=None):
+        self.data = data or []
+
+    def add(self, item):
+        self.data.append(item)
+
+    def run(self):
+        return [self.transform(x) for x in self.data]
+
+    def transform(self, x):
+        return x
+
+
+# ---
+
+def main():
+    import sys
+    args = sys.argv[1:]
+    if not args:
+        print("Нужны аргументы")
+        return
+    for arg in args:
+        print(f"arg: {arg}")
+
+if __name__ == "__main__":
+    main()
+
+
+# ---
+
+def gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+
+def lcm(a, b):
+    return abs(a * b) // gcd(a, b) if a and b else 0
+
+
+# ---
+
+import math
+
+def is_prime(n):
+    if n < 2:
+        return False
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if n % i == 0:
+            return False
+    return True
+
+
+# ---
+
+def solve_task(task):
+    """Решает задачу, описанную в task."""
+    result = []
+    for item in task:
+        if item:
+            result.append(item)
+    return result
+
+
+# ---
+
+class Processor:
+    def __init__(self, data=None):
+        self.data = data or []
+
+    def add(self, item):
+        self.data.append(item)
+
+    def run(self):
+        return [self.transform(x) for x in self.data]
+
+    def transform(self, x):
+        return x
+
+
+# ---
+
+def main():
+    import sys
+    args = sys.argv[1:]
+    if not args:
+        print("Нужны аргументы")
+        return
+    for arg in args:
+        print(f"arg: {arg}")
+
+if __name__ == "__main__":
+    main()
+
+
+# ---
+
+def gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+
+def lcm(a, b):
+    return abs(a * b) // gcd(a, b) if a and b else 0
+
+
+# ---
+
+import math
+
+def is_prime(n):
+    if n < 2:
+        return False
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if n % i == 0:
+            return False
+    return True
+
+
+# ---
+
+def solve_task(task):
+    """Решает задачу, описанную в task."""
+    result = []
+    for item in task:
+        if item:
+            result.append(item)
+    return result
+
+
+# ---
+
+class Processor:
+    def __init__(self, data=None):
+        self.data = data or []
+
+    def add(self, item):
+        self.data.append(item)
+
+    def run(self):
+        return [self.transform(x) for x in self.data]
+
+    def transform(self, x):
+        return x
+
+
+# ---
+
+def main():
+    import sys
+    args = sys.argv[1:]
+    if not args:
+        print("Нужны аргументы")
+        return
+    for arg in args:
+        print(f"arg: {arg}")
+
+if __name__ == "__main__":
+    main()
+
+
+# ---
+
+def gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+
+def lcm(a, b):
+    return abs(a * b) // gcd(a, b) if a and b else 0
+
+
+# ---
+
+import math
+
+def is_prime(n):
+    if n < 2:
+        return False
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if n % i == 0:
+            return False
+    return True
+
+
+# ---
+
+def solve_task(task):
+    """Решает задачу, описанную в task."""
+    result = []
+    for item in task:
+        if item:
+            result.append(item)
+    return result
+
+
+# ---
+
+class Processor:
+    def __init__(self, data=None):
+        self.data = data or []
+
+    def add(self, item):
+        self.data.append(item)
+
+    def run(self):
+        return [self.transform(x) for x in self.data]
+
+    def transform(self, x):
+        return x
+
+
+# ---
+
+def main():
+    import sys
+    args = sys.argv[1:]
+    if not args:
+        print("Нужны аргументы")
+        return
+    for arg in args:
+        print(f"arg: {arg}")
+
+if __name__ == "__main__":
+    main()
+
+
+# ---
+
+def gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+
+def lcm(a, b):
+    return abs(a * b) // gcd(a, b) if a and b else 0
+
+
+# ---
+
+import math
+
+def is_prime(n):
+    if n < 2:
+        return False
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if n % i == 0:
+            return False
+    return True

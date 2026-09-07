@@ -133,142 +133,400 @@
         "success": false,
         "error": "SyntaxError: line 19: invalid syntax"
       }
+    },
+    {
+      "id": "aa5a2024-4d15-4b36-9e74-efdf1cc57b0b",
+      "text": "Task: Factorial of a number\nLanguage: python\nSolution:\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)",
+      "metadata": {}
+    },
+    {
+      "id": "cb301436-122a-48e9-8236-5d3f6bc44e99",
+      "text": "Task: Check if number is prime\nLanguage: python\ndef is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True",
+      "metadata": {}
+    },
+    {
+      "id": "da42c64e-4edc-4708-b4d5-bb3f99fdc7e4",
+      "text": "Task: Sort a list of numbers\nLanguage: python\ndef sort_list(arr):\n    return sorted(arr)",
+      "metadata": {}
+    },
+    {
+      "id": "e1de4a57-4274-4aba-9d96-be3ebd7d16ac",
+      "text": "Task: Find maximum element\nLanguage: python\ndef find_max(arr):\n    if not arr:\n        return None\n    return max(arr)",
+      "metadata": {}
+    },
+    {
+      "id": "6da67e53-a31f-4f99-a756-740de2327f9c",
+      "text": "Task: Reverse a string\nLanguage: python\ndef reverse_string(s):\n    return s[::-1]",
+      "metadata": {}
+    },
+    {
+      "id": "1bd06a04-d9fc-4c10-be8c-241a4b0348ad",
+      "text": "Task: Fibonacci number\nLanguage: python\ndef fibonacci(n):\n    if n <= 0: return 0\n    if n == 1: return 1\n    a, b = 0, 1\n    for _ in range(2, n + 1):\n        a, b = b, a + b\n    return b",
+      "metadata": {}
+    },
+    {
+      "id": "4bc9085c-f716-49f6-95b5-ed8a18b383aa",
+      "text": "Task: Sum of list elements\nLanguage: python\ndef sum_list(arr):\n    return sum(arr)",
+      "metadata": {}
+    },
+    {
+      "id": "e12d1bc4-0349-4e00-b936-9c3b5dddd818",
+      "text": "Task: Check palindrome\nLanguage: python\ndef is_palindrome(s):\n    s = s.lower().replace(' ', '')\n    return s == s[::-1]",
+      "metadata": {}
+    },
+    {
+      "id": "54b8ed1e-aea2-492e-98a6-7d99a4c9442a",
+      "text": "Task: Binary search\nLanguage: javascript\nfunction binarySearch(arr, target) {\n    let lo = 0, hi = arr.length - 1;\n    while (lo <= hi) {\n        const mid = (lo + hi) >> 1;\n        if (arr[mid] === target) return mid;\n        else if (arr[mid] < target) lo = mid + 1;\n        else hi = mid - 1;\n    }\n    return -1;\n}",
+      "metadata": {}
+    },
+    {
+      "id": "006af8f9-3e5c-45f2-a5a7-52b53de85871",
+      "text": "Task: Factorial in C\nLanguage: c\nint factorial(int n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}",
+      "metadata": {}
+    },
+    {
+      "id": "74e4b8e4-2df3-4188-9835-e4daf6f17506",
+      "text": "Task: Is prime in Go\nLanguage: go\nfunc isPrime(n int) bool {\n    if n < 2 { return false }\n    for i := 2; i*i <= n; i++ {\n        if n%i == 0 { return false }\n    }\n    return true\n}",
+      "metadata": {}
+    },
+    {
+      "id": "faf44299-e7e4-4c85-be84-b94cb93c4aaa",
+      "text": "Task: Factorial in Rust\nLanguage: rust\nfn factorial(n: i32) -> i32 {\n    if n <= 1 { 1 } else { n * factorial(n - 1) }\n}",
+      "metadata": {}
+    },
+    {
+      "id": "003ba74b-d8cb-46b9-adc2-395eb01afbe1",
+      "text": "Task: Reverse string in Java\nLanguage: java\npublic static String reverseString(String s) {\n    return new StringBuilder(s).reverse().toString();\n}",
+      "metadata": {}
+    },
+    {
+      "id": "d969f1a1-6f62-4dca-a4f6-cbd76e413abb",
+      "text": "Task: FizzBuzz\nLanguage: python\ndef fizzbuzz(n):\n    for i in range(1, n + 1):\n        if i % 15 == 0: yield 'FizzBuzz'\n        elif i % 3 == 0: yield 'Fizz'\n        elif i % 5 == 0: yield 'Buzz'\n        else: yield str(i)",
+      "metadata": {}
+    },
+    {
+      "id": "e7388d8f-65b2-4218-add7-8dbe85bda641",
+      "text": "Task: GCD in Kotlin\nLanguage: kotlin\nfun gcd(a: Int, b: Int): Int {\n    var x = a; var y = b\n    while (y != 0) { val t = x % y; x = y; y = t }\n    return x\n}",
+      "metadata": {}
+    },
+    {
+      "id": "d803b44b-2ee9-4b73-a9f9-45e91e009845",
+      "text": "Task: Sum list in Haskell\nLanguage: haskell\nsumList :: [Int] -> Int\nsumList = sum",
+      "metadata": {}
+    },
+    {
+      "id": "b58482be-0951-4ebc-9313-abac93d39384",
+      "text": "Task: Binary search in C++\nLanguage: c++\nint binarySearch(std::vector<int> arr, int target) {\n    int lo = 0, hi = arr.size() - 1;\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (arr[mid] == target) return mid;\n        else if (arr[mid] < target) lo = mid + 1;\n        else hi = mid - 1;\n    }\n    return -1;\n}",
+      "metadata": {}
+    },
+    {
+      "id": "ef37bfaa-350c-4944-9124-a877b3b3d243",
+      "text": "Task: Find max in Ruby\nLanguage: ruby\ndef find_max(arr)\n    arr.max\nend",
+      "metadata": {}
+    },
+    {
+      "id": "456b7f83-cfde-433a-a584-66d7e08a582b",
+      "text": "Task: Fibonacci in Lua\nLanguage: lua\nfunction fibonacci(n)\n    if n <= 0 then return 0 end\n    if n == 1 then return 1 end\n    local a, b = 0, 1\n    for i = 2, n do a, b = b, a + b end\n    return b\nend",
+      "metadata": {}
+    },
+    {
+      "id": "b8ff042a-8e79-4825-b023-220c52cb522f",
+      "text": "Task: Напиши функцию факториал числа\nLanguage: python\nSolution:\n#!/usr/bin/env python3\n\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n",
+      "metadata": {
+        "task": "Напиши функцию факториал числа",
+        "language": "python",
+        "success": true
+      }
+    },
+    {
+      "id": "9467dfd0-def0-4a5d-80f4-eef8b161fb67",
+      "text": "Task: Write a function that calculates factorial\nLanguage: python\nSolution:\n# Based on similar solution:\n# ---\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n# ---\n\n#!/usr/bin/env python3\n\ndef solution(n):\n    if n <= 1:\n        return 1\n    return n * solution(n - 1)\n",
+      "metadata": {
+        "task": "Write a function that calculates factorial",
+        "language": "python",
+        "success": true
+      }
+    },
+    {
+      "id": "766386b7-0ddd-4001-9d54-664538d80b01",
+      "text": "Task: Напиши функцию проверки простого числа\nLanguage: go\nSolution:\npackage main\n\nimport \"fmt\"\n\nfunc is_prime(n int) int {\n    if n < 2 { return false }\n    for i := 2; i*i <= n; i++ {\n        if n%i == 0 { return false }\n    }\n    return true\n}\n",
+      "metadata": {
+        "task": "Напиши функцию проверки простого числа",
+        "language": "go",
+        "success": true
+      }
+    },
+    {
+      "id": "50c8f7f0-d051-4a59-854a-a5ba0ffae063",
+      "text": "Task: Factorial of a number\nLanguage: python\nSolution:\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)",
+      "metadata": {}
+    },
+    {
+      "id": "b0f0b859-59ec-40ea-8c6c-a7fa91e8e7c6",
+      "text": "Task: Check if number is prime\nLanguage: python\ndef is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True",
+      "metadata": {}
+    },
+    {
+      "id": "d19fab12-6298-4907-b8d7-120b52460861",
+      "text": "Task: Sort a list of numbers\nLanguage: python\ndef sort_list(arr):\n    return sorted(arr)",
+      "metadata": {}
+    },
+    {
+      "id": "72d9d16d-dcd5-42cf-9d34-8be983fa69e6",
+      "text": "Task: Find maximum element\nLanguage: python\ndef find_max(arr):\n    if not arr:\n        return None\n    return max(arr)",
+      "metadata": {}
+    },
+    {
+      "id": "6a3c9e1f-8f71-4107-a258-1d9d7dbf054f",
+      "text": "Task: Reverse a string\nLanguage: python\ndef reverse_string(s):\n    return s[::-1]",
+      "metadata": {}
+    },
+    {
+      "id": "95599381-1aa5-4a02-b02d-11a683301164",
+      "text": "Task: Fibonacci number\nLanguage: python\ndef fibonacci(n):\n    if n <= 0: return 0\n    if n == 1: return 1\n    a, b = 0, 1\n    for _ in range(2, n + 1):\n        a, b = b, a + b\n    return b",
+      "metadata": {}
+    },
+    {
+      "id": "0ee33561-95ab-4d8d-9f44-a57fbe12dba1",
+      "text": "Task: Sum of list elements\nLanguage: python\ndef sum_list(arr):\n    return sum(arr)",
+      "metadata": {}
+    },
+    {
+      "id": "8b5e0c71-1248-4680-b629-1cb31e607bde",
+      "text": "Task: Check palindrome\nLanguage: python\ndef is_palindrome(s):\n    s = s.lower().replace(' ', '')\n    return s == s[::-1]",
+      "metadata": {}
+    },
+    {
+      "id": "076abeaf-1c65-4dd4-9488-684fff2c1df1",
+      "text": "Task: Binary search\nLanguage: javascript\nfunction binarySearch(arr, target) {\n    let lo = 0, hi = arr.length - 1;\n    while (lo <= hi) {\n        const mid = (lo + hi) >> 1;\n        if (arr[mid] === target) return mid;\n        else if (arr[mid] < target) lo = mid + 1;\n        else hi = mid - 1;\n    }\n    return -1;\n}",
+      "metadata": {}
+    },
+    {
+      "id": "06dd3b20-3c9e-4841-be76-8e9fb1f388c1",
+      "text": "Task: Factorial in C\nLanguage: c\nint factorial(int n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}",
+      "metadata": {}
+    },
+    {
+      "id": "773de79f-3c70-4c0c-9025-a7edd8a696db",
+      "text": "Task: Is prime in Go\nLanguage: go\nfunc isPrime(n int) bool {\n    if n < 2 { return false }\n    for i := 2; i*i <= n; i++ {\n        if n%i == 0 { return false }\n    }\n    return true\n}",
+      "metadata": {}
+    },
+    {
+      "id": "6cd24ddd-4b4b-4752-87fc-a243bf5d939e",
+      "text": "Task: Factorial in Rust\nLanguage: rust\nfn factorial(n: i32) -> i32 {\n    if n <= 1 { 1 } else { n * factorial(n - 1) }\n}",
+      "metadata": {}
+    },
+    {
+      "id": "10ceba15-0a48-4e35-a109-d73745d6e742",
+      "text": "Task: Reverse string in Java\nLanguage: java\npublic static String reverseString(String s) {\n    return new StringBuilder(s).reverse().toString();\n}",
+      "metadata": {}
+    },
+    {
+      "id": "ca20adeb-e0e2-4710-8b7b-da7e608473ab",
+      "text": "Task: FizzBuzz\nLanguage: python\ndef fizzbuzz(n):\n    for i in range(1, n + 1):\n        if i % 15 == 0: yield 'FizzBuzz'\n        elif i % 3 == 0: yield 'Fizz'\n        elif i % 5 == 0: yield 'Buzz'\n        else: yield str(i)",
+      "metadata": {}
+    },
+    {
+      "id": "096db1ba-28d4-415b-8684-010d7e0f9929",
+      "text": "Task: GCD in Kotlin\nLanguage: kotlin\nfun gcd(a: Int, b: Int): Int {\n    var x = a; var y = b\n    while (y != 0) { val t = x % y; x = y; y = t }\n    return x\n}",
+      "metadata": {}
+    },
+    {
+      "id": "a3ae14ee-20b8-42ac-89e7-04dbe6bb3da3",
+      "text": "Task: Sum list in Haskell\nLanguage: haskell\nsumList :: [Int] -> Int\nsumList = sum",
+      "metadata": {}
+    },
+    {
+      "id": "f96662ab-3dfa-4b21-a0ba-dcd7437898df",
+      "text": "Task: Binary search in C++\nLanguage: c++\nint binarySearch(std::vector<int> arr, int target) {\n    int lo = 0, hi = arr.size() - 1;\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (arr[mid] == target) return mid;\n        else if (arr[mid] < target) lo = mid + 1;\n        else hi = mid - 1;\n    }\n    return -1;\n}",
+      "metadata": {}
+    },
+    {
+      "id": "b2cc4aeb-6755-4c11-99e7-e44b2eedadb1",
+      "text": "Task: Find max in Ruby\nLanguage: ruby\ndef find_max(arr)\n    arr.max\nend",
+      "metadata": {}
+    },
+    {
+      "id": "4fce84e8-9bee-4b90-b724-a32476fe4ab4",
+      "text": "Task: Fibonacci in Lua\nLanguage: lua\nfunction fibonacci(n)\n    if n <= 0 then return 0 end\n    if n == 1 then return 1 end\n    local a, b = 0, 1\n    for i = 2, n do a, b = b, a + b end\n    return b\nend",
+      "metadata": {}
+    },
+    {
+      "id": "ba6a1aec-322b-42be-9a08-f49e97939ec9",
+      "text": "Task: Напиши функцию факториал числа\nLanguage: python\nSolution:\n# Based on similar solution:\n# ---\n#!/usr/bin/env python3\n# ---\n\n#!/usr/bin/env python3\n\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n",
+      "metadata": {
+        "task": "Напиши функцию факториал числа",
+        "language": "python",
+        "success": true
+      }
+    },
+    {
+      "id": "891b6dce-f90e-49d8-adf3-92b46744dbea",
+      "text": "Task: Write a function that calculates factorial\nLanguage: python\nSolution:\n# Based on similar solution:\n# ---\n# Based on similar solution:\n# ---\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n# ---\n# ---\n\n#!/usr/bin/env python3\n\ndef solution(n):\n    if n <= 1:\n        return 1\n    return n * solution(n - 1)\n",
+      "metadata": {
+        "task": "Write a function that calculates factorial",
+        "language": "python",
+        "success": true
+      }
+    },
+    {
+      "id": "8febf724-3d99-40fe-9730-2fc3e316a501",
+      "text": "Task: Напиши функцию проверки простого числа\nLanguage: python\nSolution:\n# Based on similar solution:\n# ---\n#!/usr/bin/env python3\n# ---\n\n#!/usr/bin/env python3\n\ndef is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True\n",
+      "metadata": {
+        "task": "Напиши функцию проверки простого числа",
+        "language": "python",
+        "success": true
+      }
     }
   ],
   "idf": {
-    "task": 1.0,
-    "def": 1.538996500732687,
-    "number": 2.791759469228055,
+    "if": 1.4583075894825441,
+    "solution": 2.6545583477145698,
     "language": 1.0,
-    "solution": 2.5686159179138452,
-    "python": 1.613104472886409,
-    "if": 1.4700036292457357,
-    "return": 1.1823215567939547,
-    "factorial": 2.791759469228055,
-    "prime": 3.0794415416798357,
-    "check": 3.0794415416798357,
-    "true": 3.0794415416798357,
-    "is_prime": 3.4849066497880004,
-    "range": 2.791759469228055,
-    "int": 2.2321436812926323,
-    "false": 3.0794415416798357,
-    "sorted": 3.4849066497880004,
-    "sort_list": 3.4849066497880004,
-    "sort": 3.4849066497880004,
-    "numbers": 3.4849066497880004,
-    "arr": 2.2321436812926323,
-    "list": 2.791759469228055,
-    "element": 3.4849066497880004,
-    "find_max": 3.0794415416798357,
-    "maximum": 3.4849066497880004,
-    "max": 3.0794415416798357,
-    "find": 3.0794415416798357,
-    "none": 3.4849066497880004,
-    "reverse_string": 3.4849066497880004,
-    "reverse": 3.0794415416798357,
-    "string": 3.0794415416798357,
-    "fibonacci": 3.0794415416798357,
-    "sum_list": 3.4849066497880004,
-    "elements": 3.4849066497880004,
-    "sum": 3.0794415416798357,
-    "palindrome": 3.4849066497880004,
-    "lower": 3.4849066497880004,
-    "is_palindrome": 3.4849066497880004,
-    "replace": 3.4849066497880004,
-    "binary": 3.0794415416798357,
-    "target": 3.0794415416798357,
-    "hi": 3.0794415416798357,
-    "javascript": 3.4849066497880004,
-    "else": 2.09861228866811,
-    "lo": 3.0794415416798357,
-    "function": 3.0794415416798357,
-    "const": 3.4849066497880004,
-    "length": 3.4849066497880004,
-    "search": 3.0794415416798357,
-    "while": 2.2321436812926323,
-    "mid": 3.0794415416798357,
-    "binarysearch": 3.0794415416798357,
-    "let": 3.0794415416798357,
-    "isprime": 3.4849066497880004,
-    "go": 3.4849066497880004,
-    "bool": 3.4849066497880004,
-    "func": 3.4849066497880004,
-    "i32": 3.0794415416798357,
-    "rust": 3.0794415416798357,
-    "fn": 3.0794415416798357,
-    "tostring": 3.4849066497880004,
-    "new": 3.4849066497880004,
-    "stringbuilder": 3.4849066497880004,
-    "public": 3.4849066497880004,
-    "static": 3.4849066497880004,
-    "java": 3.4849066497880004,
-    "reversestring": 3.4849066497880004,
-    "15": 3.4849066497880004,
-    "fizz": 3.4849066497880004,
-    "fizzbuzz": 3.4849066497880004,
-    "buzz": 3.4849066497880004,
-    "str": 3.4849066497880004,
-    "yield": 3.4849066497880004,
-    "elif": 3.4849066497880004,
-    "val": 3.4849066497880004,
-    "fun": 3.4849066497880004,
-    "var": 3.4849066497880004,
-    "gcd": 3.4849066497880004,
-    "kotlin": 3.4849066497880004,
-    "sumlist": 3.4849066497880004,
-    "haskell": 3.4849066497880004,
-    "vector": 3.4849066497880004,
-    "std": 3.4849066497880004,
-    "size": 3.4849066497880004,
-    "end": 3.0794415416798357,
-    "ruby": 3.4849066497880004,
-    "local": 3.4849066497880004,
-    "lua": 3.4849066497880004,
-    "invalid": 2.791759469228055,
-    "env": 2.791759469228055,
-    "python3": 2.791759469228055,
-    "синтаксису": 2.791759469228055,
-    "логику": 2.791759469228055,
-    "usr": 2.791759469228055,
-    "язык": 2.5686159179138452,
-    "задача": 2.5686159179138452,
-    "class": 2.791759469228055,
-    "bin": 2.791759469228055,
-    "функции": 2.791759469228055,
-    "предыдущая": 2.791759469228055,
-    "lang": 3.4849066497880004,
-    "todo": 2.5686159179138452,
-    "syntaxerror": 2.791759469228055,
-    "подсказки": 2.791759469228055,
-    "try": 2.791759469228055,
-    "failed": 2.791759469228055,
-    "line": 2.791759469228055,
-    "code": 2.791759469228055,
-    "import": 2.791759469228055,
-    "implement": 2.5686159179138452,
-    "syntax": 2.791759469228055,
-    "error": 2.791759469228055,
-    "ошибка": 2.791759469228055,
-    "реализовать": 2.791759469228055,
-    "19": 2.791759469228055,
-    "trait": 3.4849066497880004,
-    "use": 3.4849066497880004,
-    "lfng": 3.4849066497880004,
-    "struct": 3.4849066497880004,
-    "hints": 3.4849066497880004,
-    "impl": 3.4849066497880004,
-    "enum": 3.4849066497880004,
-    "logic": 3.4849066497880004,
-    "mod": 3.4849066497880004,
-    "pub": 3.4849066497880004,
-    "mut": 3.4849066497880004,
-    "graph": 3.4849066497880004,
-    "помощью": 3.4849066497880004,
-    "tkinter": 3.0794415416798357,
-    "калькулятор": 3.4849066497880004,
-    "графический": 3.4849066497880004,
-    "создай": 3.4849066497880004,
-    "calculator": 3.4849066497880004,
-    "create": 3.4849066497880004
+    "return": 1.1941560144409573,
+    "python": 1.6359887667199966,
+    "factorial": 2.580450375560848,
+    "def": 1.5559460590464602,
+    "number": 2.916922612182061,
+    "task": 1.0,
+    "check": 3.2735975561207935,
+    "prime": 3.2735975561207935,
+    "range": 2.8216124323777363,
+    "true": 3.0222831278398874,
+    "int": 2.1749852674526835,
+    "false": 3.0222831278398874,
+    "is_prime": 3.4277482359480516,
+    "sorted": 3.833213344056216,
+    "sort": 3.833213344056216,
+    "arr": 2.2750687260096663,
+    "numbers": 3.833213344056216,
+    "list": 2.916922612182061,
+    "sort_list": 3.833213344056216,
+    "find": 3.2735975561207935,
+    "max": 3.2735975561207935,
+    "element": 3.833213344056216,
+    "none": 3.833213344056216,
+    "find_max": 3.2735975561207935,
+    "maximum": 3.833213344056216,
+    "string": 3.2735975561207935,
+    "reverse": 3.2735975561207935,
+    "reverse_string": 3.833213344056216,
+    "fibonacci": 3.2735975561207935,
+    "sum_list": 3.833213344056216,
+    "sum": 3.2735975561207935,
+    "elements": 3.833213344056216,
+    "palindrome": 3.833213344056216,
+    "is_palindrome": 3.833213344056216,
+    "replace": 3.833213344056216,
+    "lower": 3.833213344056216,
+    "function": 3.0222831278398874,
+    "mid": 3.2735975561207935,
+    "search": 3.2735975561207935,
+    "while": 2.6545583477145698,
+    "lo": 3.2735975561207935,
+    "target": 3.2735975561207935,
+    "hi": 3.2735975561207935,
+    "let": 3.6100697927420065,
+    "javascript": 3.833213344056216,
+    "binary": 3.2735975561207935,
+    "else": 2.4469189829363254,
+    "binarysearch": 3.2735975561207935,
+    "length": 3.833213344056216,
+    "const": 3.833213344056216,
+    "isprime": 3.833213344056216,
+    "bool": 3.833213344056216,
+    "go": 3.6100697927420065,
+    "func": 3.6100697927420065,
+    "fn": 3.6100697927420065,
+    "rust": 3.6100697927420065,
+    "i32": 3.6100697927420065,
+    "static": 3.833213344056216,
+    "tostring": 3.833213344056216,
+    "reversestring": 3.833213344056216,
+    "new": 3.833213344056216,
+    "java": 3.833213344056216,
+    "stringbuilder": 3.833213344056216,
+    "public": 3.833213344056216,
+    "fizz": 3.833213344056216,
+    "15": 3.833213344056216,
+    "yield": 3.833213344056216,
+    "elif": 3.833213344056216,
+    "buzz": 3.833213344056216,
+    "str": 3.833213344056216,
+    "fizzbuzz": 3.833213344056216,
+    "fun": 3.833213344056216,
+    "var": 3.833213344056216,
+    "gcd": 3.833213344056216,
+    "val": 3.833213344056216,
+    "kotlin": 3.833213344056216,
+    "haskell": 3.833213344056216,
+    "sumlist": 3.833213344056216,
+    "vector": 3.833213344056216,
+    "size": 3.833213344056216,
+    "std": 3.833213344056216,
+    "end": 3.2735975561207935,
+    "ruby": 3.833213344056216,
+    "lua": 3.833213344056216,
+    "local": 3.833213344056216,
+    "python3": 3.0222831278398874,
+    "синтаксису": 3.833213344056216,
+    "env": 3.0222831278398874,
+    "error": 3.833213344056216,
+    "подсказки": 3.833213344056216,
+    "реализовать": 3.833213344056216,
+    "failed": 3.833213344056216,
+    "code": 3.833213344056216,
+    "функции": 3.833213344056216,
+    "предыдущая": 3.833213344056216,
+    "ошибка": 3.833213344056216,
+    "задача": 3.6100697927420065,
+    "язык": 3.6100697927420065,
+    "19": 3.833213344056216,
+    "логику": 3.833213344056216,
+    "try": 3.833213344056216,
+    "class": 3.833213344056216,
+    "lang": 4.526360524616162,
+    "syntax": 3.833213344056216,
+    "todo": 3.6100697927420065,
+    "bin": 3.0222831278398874,
+    "line": 3.833213344056216,
+    "usr": 3.0222831278398874,
+    "implement": 3.6100697927420065,
+    "syntaxerror": 3.833213344056216,
+    "invalid": 3.833213344056216,
+    "import": 3.6100697927420065,
+    "impl": 4.526360524616162,
+    "lfng": 4.526360524616162,
+    "pub": 4.526360524616162,
+    "mod": 4.526360524616162,
+    "mut": 4.526360524616162,
+    "trait": 4.526360524616162,
+    "struct": 4.526360524616162,
+    "hints": 4.526360524616162,
+    "use": 4.526360524616162,
+    "logic": 4.526360524616162,
+    "enum": 4.526360524616162,
+    "графический": 4.526360524616162,
+    "помощью": 4.526360524616162,
+    "graph": 4.526360524616162,
+    "создай": 4.526360524616162,
+    "калькулятор": 4.526360524616162,
+    "tkinter": 4.120895416507997,
+    "create": 4.526360524616162,
+    "calculator": 4.526360524616162,
+    "числа": 3.6100697927420065,
+    "функцию": 3.6100697927420065,
+    "факториал": 4.120895416507997,
+    "напиши": 3.6100697927420065,
+    "write": 4.120895416507997,
+    "based": 3.6100697927420065,
+    "that": 4.120895416507997,
+    "similar": 3.6100697927420065,
+    "calculates": 4.120895416507997,
+    "простого": 4.120895416507997,
+    "fmt": 4.526360524616162,
+    "проверки": 4.120895416507997,
+    "main": 4.526360524616162,
+    "package": 4.526360524616162
   }
 }

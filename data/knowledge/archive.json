@@ -112,5 +112,131 @@
         }
       ]
     }
+  },
+  {
+    "task": "Напиши функцию факториал числа",
+    "result": {
+      "success": true,
+      "code": "#!/usr/bin/env python3\n\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n",
+      "language": "python",
+      "language_info": {
+        "name": "Python",
+        "ext": ".py"
+      },
+      "attempts": 1,
+      "feedback": "Code passed all checks",
+      "history": [
+        {
+          "code": "#!/usr/bin/env python3\n\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n",
+          "feedback": "Code passed all checks",
+          "success": true
+        }
+      ]
+    }
+  },
+  {
+    "task": "Write a function that calculates factorial",
+    "result": {
+      "success": true,
+      "code": "# Based on similar solution:\n# ---\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n# ---\n\n#!/usr/bin/env python3\n\ndef solution(n):\n    if n <= 1:\n        return 1\n    return n * solution(n - 1)\n",
+      "language": "python",
+      "language_info": {
+        "name": "Python",
+        "ext": ".py"
+      },
+      "attempts": 1,
+      "feedback": "Code passed all checks",
+      "history": [
+        {
+          "code": "# Based on similar solution:\n# ---\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n# ---\n\n#!/usr/bin/env python3\n\ndef solution(n):\n    if n <= 1:\n        return 1\n    return n * solution(n - 1)\n",
+          "feedback": "Code passed all checks",
+          "success": true
+        }
+      ]
+    }
+  },
+  {
+    "task": "Напиши функцию проверки простого числа",
+    "result": {
+      "success": true,
+      "code": "package main\n\nimport \"fmt\"\n\nfunc is_prime(n int) int {\n    if n < 2 { return false }\n    for i := 2; i*i <= n; i++ {\n        if n%i == 0 { return false }\n    }\n    return true\n}\n",
+      "language": "go",
+      "language_info": {
+        "name": "Go",
+        "ext": ".go"
+      },
+      "attempts": 1,
+      "feedback": "Code passed all checks",
+      "history": [
+        {
+          "code": "package main\n\nimport \"fmt\"\n\nfunc is_prime(n int) int {\n    if n < 2 { return false }\n    for i := 2; i*i <= n; i++ {\n        if n%i == 0 { return false }\n    }\n    return true\n}\n",
+          "feedback": "Code passed all checks",
+          "success": true
+        }
+      ]
+    }
+  },
+  {
+    "task": "Напиши функцию факториал числа",
+    "result": {
+      "success": true,
+      "code": "# Based on similar solution:\n# ---\n#!/usr/bin/env python3\n# ---\n\n#!/usr/bin/env python3\n\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n",
+      "language": "python",
+      "language_info": {
+        "name": "Python",
+        "ext": ".py"
+      },
+      "attempts": 1,
+      "feedback": "Code passed all checks",
+      "history": [
+        {
+          "code": "# Based on similar solution:\n# ---\n#!/usr/bin/env python3\n# ---\n\n#!/usr/bin/env python3\n\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n",
+          "feedback": "Code passed all checks",
+          "success": true
+        }
+      ]
+    }
+  },
+  {
+    "task": "Write a function that calculates factorial",
+    "result": {
+      "success": true,
+      "code": "# Based on similar solution:\n# ---\n# Based on similar solution:\n# ---\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n# ---\n# ---\n\n#!/usr/bin/env python3\n\ndef solution(n):\n    if n <= 1:\n        return 1\n    return n * solution(n - 1)\n",
+      "language": "python",
+      "language_info": {
+        "name": "Python",
+        "ext": ".py"
+      },
+      "attempts": 1,
+      "feedback": "Code passed all checks",
+      "history": [
+        {
+          "code": "# Based on similar solution:\n# ---\n# Based on similar solution:\n# ---\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n# ---\n# ---\n\n#!/usr/bin/env python3\n\ndef solution(n):\n    if n <= 1:\n        return 1\n    return n * solution(n - 1)\n",
+          "feedback": "Code passed all checks",
+          "success": true
+        }
+      ]
+    }
+  },
+  {
+    "task": "Напиши функцию проверки простого числа",
+    "result": {
+      "success": true,
+      "code": "# Based on similar solution:\n# ---\n#!/usr/bin/env python3\n# ---\n\n#!/usr/bin/env python3\n\ndef is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True\n",
+      "language": "python",
+      "language_info": {
+        "name": "Python",
+        "ext": ".py"
+      },
+      "attempts": 1,
+      "feedback": "Code passed all checks",
+      "history": [
+        {
+          "code": "# Based on similar solution:\n# ---\n#!/usr/bin/env python3\n# ---\n\n#!/usr/bin/env python3\n\ndef is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True\n",
+          "feedback": "Code passed all checks",
+          "success": true
+        }
+      ]
+    }
   }
 ]

@@ -8,6 +8,12 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Кодировка вывода: поддержка UTF-8 и при перенаправлении/в pipes.
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 from src.memory.vector_store import LocalVectorStore
 from src.agent.coding_agent import CodingAgent
 from src.orchestrator import Orchestrator
@@ -31,6 +37,8 @@ def print_banner():
     print("    /learn [depth]     - start self-learning from internet")
     print("    /learn-stop        - stop learning (saves progress)")
     print("    /learn-clear       - reset learning progress")
+    print("    /train [mode]      - train neural model (corpus/self/knowledge/feedback/all)")
+    print("    /gen <prompt>      - test neural generation")
     print("    /help              - this help")
     print("    /quit              - exit")
     print(DIVIDER)
@@ -144,6 +152,35 @@ def main():
                 elif name == '/learn-clear':
                     educator = SelfEducator(vector_store)
                     educator.clear_progress()
+
+                elif name == '/train':
+                    mode = cmd[1] if len(cmd) > 1 else 'corpus'
+                    steps = int(cmd[2]) if len(cmd) > 2 else 2000
+                    from src.neural.neural_trainer import NeuralTrainer, DEFAULT_MODEL
+                    tr = NeuralTrainer(model_path=DEFAULT_MODEL)
+                    if mode == 'corpus':
+                        tr.learn_corpus(n_steps=steps)
+                    elif mode == 'self':
+                        tr.learn_self(n_steps=steps)
+                    elif mode == 'knowledge':
+                        tr.learn_knowledge(n_steps=steps)
+                    elif mode == 'feedback':
+                        tr.learn_feedback(n_steps=steps)
+                    else:
+                        tr.learn_corpus(n_steps=steps)
+                        tr.learn_self(n_steps=max(500, steps // 2))
+                    tr.save(DEFAULT_MODEL)
+                    tr.close()
+                    print(f"  [модель] обучение '{mode}' завершено ({steps} шагов). Сохранено в {DEFAULT_MODEL}")
+
+                elif name == '/gen':
+                    query = " ".join(cmd[1:]) or "def hello_world():"
+                    from src.neural.neural_generator import NeuralGenerator
+                    ng = NeuralGenerator()
+                    code, ok = ng.generate(query, "python")
+                    print(f"  [нейро] ok={ok}")
+                    print(code)
+                    ng.close()
 
                 else:
                     print(f"  Unknown command: {name}. Type /help")

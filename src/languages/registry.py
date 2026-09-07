@@ -558,7 +558,7 @@ TASK_KEYWORD_MAP = {
     "c": ["на си", " на c ", "c lang", "ansi c"],
     "c++": ["c++", "плюсы", "cpp"],
     "java": ["java", "джава"],
-    "go": ["go", "голанг", "го ", "golang"],
+    "go": ["go", "голанг", "golang"],
     "rust": ["rust", "раст"],
     "php": ["php", "пхп"],
     "ruby": ["ruby", "руби"],

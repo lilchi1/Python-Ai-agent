@@ -1,0 +1,88 @@
+  Параметры: 496704 | Модель: src/model/model.bin
+  Шагов/режим: 8000 | seq: 64
+============================================================
+  РЕЖИМ 1: ОБУЧЕНИЕ НА КОРПУСЕ КОДА
+============================================================
+  step 100/8000 | loss 5.0438 | avg 5.7030 | 55ms/step
+  step 200/8000 | loss 5.7897 | avg 5.7146 | 56ms/step
+  step 300/8000 | loss 4.9448 | avg 5.3977 | 56ms/step
+  step 400/8000 | loss 7.1436 | avg 5.1275 | 55ms/step
+  step 500/8000 | loss 4.1067 | avg 4.9388 | 55ms/step
+  step 600/8000 | loss 5.1013 | avg 4.8667 | 55ms/step
+  step 700/8000 | loss 8.3037 | avg 4.8093 | 55ms/step
+  step 800/8000 | loss 8.4713 | avg 4.7520 | 55ms/step
+  step 900/8000 | loss 7.3437 | avg 4.6953 | 55ms/step
+  step 1000/8000 | loss 2.7509 | avg 4.5859 | 55ms/step
+  step 1100/8000 | loss 3.5241 | avg 4.5129 | 55ms/step
+  step 1200/8000 | loss 1.7447 | avg 4.4879 | 55ms/step
+  step 1300/8000 | loss 2.2267 | avg 4.4703 | 55ms/step
+  step 1400/8000 | loss 5.4109 | avg 4.4196 | 55ms/step
+  step 1500/8000 | loss 3.9990 | avg 4.3982 | 55ms/step
+  step 1600/8000 | loss 11.4352 | avg 4.4074 | 55ms/step
+  step 1700/8000 | loss 3.6093 | avg 4.3772 | 55ms/step
+  step 1800/8000 | loss 5.0675 | avg 4.3393 | 55ms/step
+  step 1900/8000 | loss 3.6552 | avg 4.3180 | 55ms/step
+  step 2000/8000 | loss 4.6363 | avg 4.2998 | 55ms/step
+  step 2100/8000 | loss 3.9943 | avg 4.2725 | 55ms/step
+  step 2200/8000 | loss 3.1864 | avg 4.2473 | 55ms/step
+  step 2300/8000 | loss 3.6387 | avg 4.2343 | 55ms/step
+  step 2400/8000 | loss 3.6726 | avg 4.2129 | 54ms/step
+  step 2500/8000 | loss 2.9223 | avg 4.1951 | 54ms/step
+  step 2600/8000 | loss 4.4812 | avg 4.1772 | 54ms/step
+  step 2700/8000 | loss 3.8654 | avg 4.1641 | 54ms/step
+  step 2800/8000 | loss 3.4768 | avg 4.1429 | 54ms/step
+  step 2900/8000 | loss 4.3351 | avg 4.1317 | 54ms/step
+  step 3000/8000 | loss 3.7858 | avg 4.1181 | 54ms/step
+  step 3100/8000 | loss 1.2185 | avg 4.0991 | 54ms/step
+  step 3200/8000 | loss 4.0695 | avg 4.1031 | 54ms/step
+  step 3300/8000 | loss 4.2162 | avg 4.0817 | 54ms/step
+  step 3400/8000 | loss 3.3642 | avg 4.0716 | 54ms/step
+  step 3500/8000 | loss 3.2244 | avg 4.0609 | 54ms/step
+  step 3600/8000 | loss 1.5164 | avg 4.0533 | 54ms/step
+  step 3700/8000 | loss 5.2379 | avg 4.0334 | 54ms/step
+  step 3800/8000 | loss 6.3962 | avg 4.0180 | 54ms/step
+  step 3900/8000 | loss 4.5352 | avg 4.0104 | 54ms/step
+  step 4000/8000 | loss 3.5076 | avg 3.9930 | 54ms/step
+  step 4100/8000 | loss 1.2370 | avg 3.9812 | 54ms/step
+  step 4200/8000 | loss 3.8402 | avg 3.9773 | 54ms/step
+  step 4300/8000 | loss 3.4481 | avg 3.9609 | 54ms/step
+  step 4400/8000 | loss 4.9524 | avg 3.9518 | 54ms/step
+  step 4500/8000 | loss 3.2596 | avg 3.9449 | 54ms/step
+  step 4600/8000 | loss 1.5739 | avg 3.9381 | 54ms/step
+  step 4700/8000 | loss 3.8680 | avg 3.9330 | 54ms/step
+  step 4800/8000 | loss 3.8531 | avg 3.9282 | 54ms/step
+  step 4900/8000 | loss 4.1903 | avg 3.9336 | 54ms/step
+  step 5000/8000 | loss 4.5640 | avg 3.9195 | 54ms/step
+  step 5100/8000 | loss 3.4128 | avg 3.9129 | 54ms/step
+  step 5200/8000 | loss 4.2380 | avg 3.9123 | 54ms/step
+  step 5300/8000 | loss 4.4992 | avg 3.9073 | 54ms/step
+  step 5400/8000 | loss 3.2233 | avg 3.9016 | 54ms/step
+  step 5500/8000 | loss 1.7531 | avg 3.8989 | 54ms/step
+  step 5600/8000 | loss 3.8621 | avg 3.8948 | 54ms/step
+  step 5700/8000 | loss 3.5102 | avg 3.8934 | 54ms/step
+  step 5800/8000 | loss 4.5180 | avg 3.8837 | 54ms/step
+  step 5900/8000 | loss 4.1776 | avg 3.8797 | 54ms/step
+  step 6000/8000 | loss 1.2008 | avg 3.8775 | 54ms/step
+  step 6100/8000 | loss 3.5681 | avg 3.8707 | 54ms/step
+  step 6200/8000 | loss 1.0928 | avg 3.8651 | 54ms/step
+  step 6300/8000 | loss 3.4528 | avg 3.8600 | 54ms/step
+  step 6400/8000 | loss 11.4005 | avg 3.8589 | 54ms/step
+  step 6500/8000 | loss 1.4784 | avg 3.8542 | 54ms/step
+  step 6600/8000 | loss 4.6323 | avg 3.8502 | 54ms/step
+  step 6700/8000 | loss 4.1814 | avg 3.8468 | 54ms/step
+  step 6800/8000 | loss 3.0796 | avg 3.8409 | 54ms/step
+  step 6900/8000 | loss 4.4088 | avg 3.8355 | 54ms/step
+  step 7000/8000 | loss 1.2911 | avg 3.8280 | 54ms/step
+  step 7100/8000 | loss 1.3240 | avg 3.8235 | 54ms/step
+  step 7200/8000 | loss 3.6766 | avg 3.8173 | 54ms/step
+  step 7300/8000 | loss 1.2660 | avg 3.8120 | 54ms/step
+  step 7400/8000 | loss 6.9234 | avg 3.8104 | 54ms/step
+  step 7500/8000 | loss 3.5806 | avg 3.8032 | 54ms/step
+  step 7600/8000 | loss 6.4042 | avg 3.7961 | 54ms/step
+  step 7700/8000 | loss 4.1096 | avg 3.7930 | 54ms/step
+  step 7800/8000 | loss 3.2804 | avg 3.7885 | 53ms/step
+  step 7900/8000 | loss 4.2084 | avg 3.7837 | 53ms/step
+  step 8000/8000 | loss 1.2442 | avg 3.7815 | 53ms/step
+  Обучение: 8000 шагов за 427.6с, средняя потеря 3.7815
+
+  Готово. Модель сохранена: src/model/model.bin

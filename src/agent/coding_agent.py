@@ -1,8 +1,10 @@
 """
 Мультиязычный агент для решения задач программирования.
-Генерирует код на любом языке, проверяет и самообучается.
+Генерирует код (гибрид: нейросеть Mini-GPT + шаблонный генератор),
+проверяет и самообучается. Всё локально, без внешних API.
 """
 import re
+import os
 from typing import Dict, Any, List, Optional
 
 from src.generator.code_generator import CodeGenerator
@@ -10,17 +12,38 @@ from src.evaluator.code_evaluator import CodeEvaluator
 from src.languages.registry import LanguageRegistry, LanguageInfo
 from src.memory.vector_store import LocalVectorStore
 
+# Нейросетевой генератор — необязательный, используется как "мозг".
+try:
+    from src.neural.neural_generator import NeuralGenerator, DEFAULT_MODEL_PATH
+    _NEURAL_AVAILABLE = os.path.exists(DEFAULT_MODEL_PATH) or True
+except Exception:  # pragma: no cover
+    NeuralGenerator = None
+    DEFAULT_MODEL_PATH = None
+    _NEURAL_AVAILABLE = False
+
 
 class CodingAgent:
     def __init__(
         self,
         vector_store: LocalVectorStore,
         max_attempts: int = 3,
+        use_neural: bool = True,
     ):
         self.vector_store = vector_store
         self.generator = CodeGenerator()
         self.evaluator = CodeEvaluator()
         self.max_attempts = max_attempts
+        self.use_neural = use_neural
+        self.neural = None
+        if use_neural and NeuralGenerator is not None:
+            try:
+                self.neural = NeuralGenerator()
+            except Exception:
+                self.neural = None
+
+    @property
+    def neural_ready(self) -> bool:
+        return bool(self.neural and self.neural.is_available())
 
     def solve(self, task: str, language: Optional[str] = None) -> Dict[str, Any]:
         lang_name = self._resolve_language(task, language)
@@ -124,7 +147,39 @@ class CodingAgent:
         if error_hint:
             enhanced_task += f" (Предыдущая ошибка: {error_hint})"
 
+        # Если есть попытки с ошибкой — используем надёжный шаблонный генератор
+        # для гарантии рабочего кода.
+        if prev_attempts and not prev_attempts[-1].get('success'):
+            return self.generator.generate(enhanced_task, lang.name, context)
+
+        # Первая попытка: пробуем нейросетевой "мозг".
+        if self.neural_ready:
+            neural_code, ok = self.neural.generate(task, lang.name, context)
+            if ok and self._looks_plausible(neural_code, lang):
+                return neural_code
+
+        # Фоллбэк: надёжный шаблонный генератор.
         return self.generator.generate(enhanced_task, lang.name, context)
+
+    def _looks_plausible(self, code: str, lang: LanguageInfo) -> bool:
+        """Простая эвристика: достаточно ли "кодоподобен" нейровывод."""
+        if not code or len(code.strip()) < 8:
+            return False
+        # Нейросеть на символьном уровне нередко даёт мусор — проверяем
+        # что есть типичные маркеры кода.
+        low = code.lower()
+        if lang.name.lower() == 'python':
+            markers = ['def ', 'return', 'import ', 'class ', '    ']
+        elif lang.name.lower() in ('javascript', 'typescript', 'java',
+                                   'c', 'c++', 'c#', 'swift', 'go', 'rust', 'kotlin'):
+            markers = ['{', 'return', '(', ';']
+        else:
+            markers = ['return', '(', 'function', 'def', 'func']
+        score = sum(1 for m in markers if m in low)
+        # Доля букв/цифр/пробелов/переводов — отсекаем "=====" мусор
+        good = sum(1 for ch in code if ch.isalnum() or ch in ' \n\t_(){}[];,.+-')
+        ratio = good / max(1, len(code))
+        return score >= 2 and ratio > 0.6
 
     def _evaluate(self, code: str, lang: LanguageInfo) -> tuple:
         if not code or not code.strip():
@@ -148,9 +203,25 @@ class CodingAgent:
                 metadatas=[{'task': task, 'language': lang, 'success': True}],
             )
             self.generator.register_solution(task, code, lang)
+            self._save_successful_solution(task, code, lang)
         else:
             entry = f"Task: {task}\nLanguage: {lang}\nError: {feedback}\nFailed code:\n{code}"
             self.vector_store.add_documents(
                 texts=[entry],
                 metadatas=[{'task': task, 'language': lang, 'success': False, 'error': feedback[:50]}],
             )
+
+    def _save_successful_solution(self, task: str, code: str, lang: str):
+        """Сохраняет успешное решение для последующего нейро-обучения (feedback mode)."""
+        try:
+            root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            sol_dir = os.path.join(root, 'data', 'solutions')
+            os.makedirs(sol_dir, exist_ok=True)
+            import hashlib
+            h = hashlib.md5(task.encode('utf-8', 'ignore')).hexdigest()[:8]
+            # Чистое имя файла
+            safe = re.sub(r'[^\w]+', '_', task)[:40].strip('_') or 'task'
+            with open(os.path.join(sol_dir, f"{safe}_{h}.py"), 'w', encoding='utf-8') as f:
+                f.write(f'# Task: {task}\n# Language: {lang}\n{code}')
+        except Exception:
+            pass
